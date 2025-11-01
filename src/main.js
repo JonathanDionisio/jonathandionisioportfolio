@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { createAboutMePanel, hideAboutMePanel } from './components/aboutMe.js';
 import './style.css';
 
 // Load floor texture URL - Vite handles this automatically
@@ -996,7 +997,7 @@ function zoomToObject(object) {
     targetPosition = new THREE.Vector3(
       objectCenter.x + 1.8,  // Move further inward (to the right) to position art on left
       objectCenter.y,         // Same y to center vertically on the art
-      objectCenter.z,   // Slight offset to angle the view
+      objectCenter.z + 1.8,   // Slight offset to angle the view
     );
     // Adjust lookAt target to position art on left side
     // Don't set it here yet - will be set in the animation callbacks
@@ -1035,7 +1036,7 @@ function zoomToObject(object) {
       if (objectType === 'poster') {
         // Position art on left by offsetting lookAt target to the left
         const lookAtTarget = new THREE.Vector3(
-          objectCenter.x - 1.2,  // Offset left to position art on left side of view
+          objectCenter.x - 4,  // Offset left to position art on left side of view
           objectCenter.y,
           objectCenter.z
         );
@@ -1051,7 +1052,7 @@ function zoomToObject(object) {
       // Set final target position - only apply special positioning for poster
       if (objectType === 'poster') {
         const lookAtTarget = new THREE.Vector3(
-          objectCenter.x - 1.2,  // Offset left for wall art
+          objectCenter.x - 4,  // Offset left for wall art
           objectCenter.y,
           objectCenter.z
         );
@@ -1120,9 +1121,6 @@ function zoomOut() {
 }
 
 function showInfoPanel(info, objectType = null) {
-  infoTitle.textContent = `${info.icon} ${info.title}`;
-  infoContent.textContent = info.content;
-  
   // Use provided objectType (from parameter) to determine panel position
   // Only use currentView as fallback if objectType is not provided
   const viewType = objectType !== null ? objectType : currentView;
@@ -1130,19 +1128,39 @@ function showInfoPanel(info, objectType = null) {
   // Reset GSAP inline transforms that might interfere
   gsap.set(infoPanel, { clearProps: 'y,x' });
   
-  // Set positioning based on object type
+  // Check if this is the About Me panel (poster)
   if (viewType === 'poster') {
-    // Wall art: position on right side
-    infoPanel.style.left = 'auto';
-    infoPanel.style.right = '5%';
+    // Use the new About Me component
+    createAboutMePanel(infoContent);
+    
+    // Wall art: position panel on left side so wall art is visible on right
+    infoPanel.style.left = '5%';
+    infoPanel.style.right = 'auto';
     infoPanel.style.top = '50%';
     infoPanel.style.transform = 'translateY(-50%)';
+    infoPanel.style.width = '90%';
+    infoPanel.style.maxWidth = '700px';
   } else {
+    // Use simple text display for other objects
+    infoTitle.textContent = `${info.icon} ${info.title}`;
+    infoContent.textContent = info.content;
+    infoContent.className = 'info-content'; // Reset class
+    infoContent.innerHTML = info.content; // Simple text
+    
     // All other objects: center the panel
     infoPanel.style.left = '50%';
     infoPanel.style.right = 'auto';
     infoPanel.style.top = '50%';
     infoPanel.style.transform = 'translate(-50%, -50%)';
+    infoPanel.style.width = '90%';
+    infoPanel.style.maxWidth = '600px';
+  }
+  
+  // Hide title for About Me (it has its own header)
+  if (viewType === 'poster') {
+    infoTitle.style.display = 'none';
+  } else {
+    infoTitle.style.display = 'block';
   }
   
   infoPanel.style.display = 'flex';
@@ -1157,6 +1175,8 @@ function showInfoPanel(info, objectType = null) {
         // Ensure transform is maintained after animation
         if (viewType === 'poster') {
           infoPanel.style.transform = 'translateY(-50%)';
+          infoPanel.style.left = '5%';
+          infoPanel.style.right = 'auto';
         } else {
           infoPanel.style.transform = 'translate(-50%, -50%)';
         }
@@ -1166,12 +1186,19 @@ function showInfoPanel(info, objectType = null) {
 }
 
 function hideInfoPanel() {
+  // Hide About Me panel if it's active
+  if (currentView === 'poster') {
+    hideAboutMePanel(infoContent);
+  }
+  
   gsap.to(infoPanel, {
     opacity: 0,
     y: -20,
     duration: 0.3,
     onComplete: () => {
       infoPanel.style.display = 'none';
+      // Clear content
+      infoContent.innerHTML = '';
     }
   });
 }

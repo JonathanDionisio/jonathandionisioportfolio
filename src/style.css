@@ -111,6 +111,14 @@ canvas {
   display: flex;
   flex-direction: column;
   color: white;
+  overflow: hidden; /* Prevent panel overflow */
+}
+
+/* When About Me is displayed, adjust panel */
+#info-panel:has(.about-me-wrapper) {
+  max-height: 90vh;
+  overflow: hidden;
+  width: 80vh;
 }
 
 #close-button {
@@ -149,6 +157,15 @@ canvas {
   line-height: 1.8;
   white-space: pre-line;
   color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+  overflow: hidden;
+}
+
+/* When About Me is displayed, adjust panel */
+#info-panel:has(.about-me-wrapper) {
+  max-height: 90vh;
+  width: 80vh;
+  overflow: hidden;
 }
 
 /* Loading/Intro Message */
