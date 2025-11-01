@@ -82,11 +82,24 @@ export function createAboutMePanel(panelContainer) {
   const interestsSection = createSection('Interests', 'interests-section');
   const interestsGrid = document.createElement('div');
   interestsGrid.className = 'interests-grid';
-  const interests = ['Web Development', '3D Graphics', 'Game Development', 'UI/UX Design', 'Music Production', 'Photography'];
+  
+  // Interests with descriptions
+  const interests = [
+    { name: 'Web Development', description: 'Creating interactive and responsive websites using modern frameworks and technologies.' },
+    { name: 'Mobile Development', description: 'Building mobile applications for iOS and Android platforms using native and cross-platform tools.' },
+    { name: 'Game Development', description: 'Building engaging games and interactive experiences with game engines and web technologies.' },
+    { name: 'UI/UX Design', description: 'Designing intuitive user interfaces and seamless user experiences for web and mobile applications.' }
+  ];
+  
   interests.forEach(interest => {
     const interestTag = document.createElement('div');
     interestTag.className = 'interest-tag';
-    interestTag.textContent = interest;
+    interestTag.textContent = interest.name;
+    interestTag.dataset.description = interest.description;
+    
+    // Add hover functionality
+    setupHoverTooltip(interestTag, interest.description);
+    
     interestsGrid.appendChild(interestTag);
   });
   interestsSection.appendChild(interestsGrid);
@@ -96,17 +109,32 @@ export function createAboutMePanel(panelContainer) {
   const goalsSection = createSection('Goals', 'goals-section');
   const goalsList = document.createElement('ul');
   goalsList.className = 'goals-list';
+  
+  // Goals with descriptions
   const goals = [
-    'Master advanced 3D graphics and WebGL technologies',
-    'Contribute to open-source projects',
-    'Build a successful career in frontend development',
-    'Create innovative web applications',
-    'Mentor other developers'
+    { 
+      text: 'Develop and learn new technical skills in real work environments',
+      description: 'Seeking hands-on experience to apply classroom knowledge and learn industry best practices.'
+    },
+    { 
+      text: 'Grow my passion for game development and mobile development',
+      description: 'Expand expertise in creating engaging games and mobile applications using cutting-edge technologies.'
+    },
+    { 
+      text: 'Gain different work experiences to make my resume and portfolio better',
+      description: 'Build a diverse portfolio showcasing various projects and experiences to advance my career.'
+    }
   ];
+  
   goals.forEach(goal => {
     const goalItem = document.createElement('li');
     goalItem.className = 'goal-item';
-    goalItem.innerHTML = `<span class="goal-icon">🎯</span> ${goal}`;
+    goalItem.innerHTML = `<span class="goal-icon">🎯</span> ${goal.text}`;
+    goalItem.dataset.description = goal.description;
+    
+    // Add hover functionality
+    setupHoverTooltip(goalItem, goal.description);
+    
     goalsList.appendChild(goalItem);
   });
   goalsSection.appendChild(goalsList);
@@ -378,6 +406,111 @@ function openImageZoom(imageSrc) {
   document.addEventListener('keydown', handleEscape);
 }
 
+function setupHoverTooltip(element, description) {
+  let tooltip = null;
+  let tooltipTimeout = null;
+  
+  element.addEventListener('mouseenter', (e) => {
+    // Clear any existing timeout
+    if (tooltipTimeout) {
+      clearTimeout(tooltipTimeout);
+    }
+    
+    // Remove existing tooltip if any
+    const existingTooltip = document.querySelector('.hover-tooltip');
+    if (existingTooltip) {
+      existingTooltip.remove();
+    }
+    
+    // Create tooltip after a short delay
+    tooltipTimeout = setTimeout(() => {
+      tooltip = document.createElement('div');
+      tooltip.className = 'hover-tooltip';
+      tooltip.textContent = description;
+      document.body.appendChild(tooltip);
+      
+      // Position tooltip
+      positionTooltip(tooltip, element);
+      
+      // Animate in
+      gsap.fromTo(tooltip,
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.2, ease: 'power2.out' }
+      );
+    }, 300); // Small delay before showing
+  });
+  
+  element.addEventListener('mouseleave', () => {
+    if (tooltipTimeout) {
+      clearTimeout(tooltipTimeout);
+      tooltipTimeout = null;
+    }
+    
+    if (tooltip) {
+      gsap.to(tooltip, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.2,
+        onComplete: () => {
+          if (tooltip && tooltip.parentNode) {
+            tooltip.parentNode.removeChild(tooltip);
+          }
+          tooltip = null;
+        }
+      });
+    }
+  });
+  
+  // Update tooltip position on scroll or resize
+  window.addEventListener('scroll', () => {
+    if (tooltip && element.matches(':hover')) {
+      positionTooltip(tooltip, element);
+    }
+  }, true);
+  
+  window.addEventListener('resize', () => {
+    if (tooltip && element.matches(':hover')) {
+      positionTooltip(tooltip, element);
+    }
+  });
+}
+
+function positionTooltip(tooltip, element) {
+  const rect = element.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const scrollY = window.scrollY || window.pageYOffset;
+  const scrollX = window.scrollX || window.pageXOffset;
+  
+  // Calculate position - prefer top, but use bottom if not enough space
+  let top = rect.top + scrollY - tooltipRect.height - 10;
+  let left = rect.left + scrollX + (rect.width / 2) - (tooltipRect.width / 2);
+  
+  // Check if tooltip would go off screen
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  // Horizontal positioning
+  if (left < 10) {
+    left = 10;
+  } else if (left + tooltipRect.width > viewportWidth - 10) {
+    left = viewportWidth - tooltipRect.width - 10;
+  }
+  
+  // Vertical positioning - try top first
+  if (top < scrollY + 10) {
+    // Not enough space on top, put below
+    top = rect.bottom + scrollY + 10;
+  }
+  
+  // Ensure tooltip doesn't go below viewport
+  if (top + tooltipRect.height > scrollY + viewportHeight - 10) {
+    top = scrollY + viewportHeight - tooltipRect.height - 10;
+  }
+  
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+}
+
 function animateSections(wrapper) {
   const sections = wrapper.querySelectorAll('.section');
   
@@ -397,6 +530,10 @@ export function hideAboutMePanel(panelContainer) {
   // Clear all slideshow intervals
   slideshowIntervals.forEach(interval => clearInterval(interval));
   slideshowIntervals = [];
+  
+  // Remove any active tooltips
+  const existingTooltips = document.querySelectorAll('.hover-tooltip');
+  existingTooltips.forEach(tooltip => tooltip.remove());
   
   const wrapper = panelContainer.querySelector('.about-me-wrapper');
   if (wrapper) {
