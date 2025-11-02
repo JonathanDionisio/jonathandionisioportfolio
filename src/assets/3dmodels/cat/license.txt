@@ -1,0 +1,8 @@
+Model Information:
+* title:	cat
+* source:	https://sketchfab.com/3d-models/cat-7e8cbcad506041dc9c3a0cb74edb3360
+* author:	artofaria (https://sketchfab.com/artofaria)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

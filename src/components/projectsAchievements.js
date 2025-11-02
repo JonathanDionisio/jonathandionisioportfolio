@@ -167,7 +167,7 @@ function getWebProjectsData() {
         'portfolio5.png',
     
       ],
-      technologies: ['React', 'Node.js', 'Three.js'],
+      technologies: ['React', 'Node.js', 'Three.js', 'GSAP'],
       website: null // Add your website URL here if available
     }
     

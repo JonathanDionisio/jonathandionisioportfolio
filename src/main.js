@@ -2,9 +2,10 @@ import { gsap } from 'gsap';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { createAboutMePanel, hideAboutMePanel } from './components/aboutMe.js';
+import { handleCatClick, initCatGame, isCatGameActive, removeCat, spawnCat } from './components/catGame.js';
+import { createNavigation, setNavigationDisabled } from './components/navigation.js';
 import { createProjectsAchievementsPanel, hideProjectsAchievementsPanel } from './components/projectsAchievements.js';
 import { createTechnicalSkillsPanel, hideTechnicalSkillsPanel } from './components/technicalSkills.js';
-import { createNavigation, setNavigationDisabled } from './components/navigation.js';
 import './style.css';
 
 // Load audio files
@@ -349,6 +350,9 @@ function createWoodFloor() {
   floor.position.set(centerX, floorThickness / 2, centerZ);
   floor.receiveShadow = true;
   floor.castShadow = true;
+  
+  // Mark floor for collision detection exclusion
+  floor.userData.isFloor = true;
   
   return floor;
 }
@@ -1060,7 +1064,8 @@ const objectHints = {
   'monitors': 'Click to view Technical Skills',
   'books': 'Click to view Projects & Achievements',
   'poster': 'Click to view About Me',
-  'plant': '???'
+  'plant': '???',
+  'cat': 'uiia?'
 };
 
 // UI Panel
@@ -1394,21 +1399,34 @@ function onMouseMove(event) {
   
   let currentHoveredObject = null;
   if (intersects.length > 0 && !isAnimating && !isPanelOpen) {
-    const object = intersects[0].object.parent;
-    if (object.userData && object.userData.type) {
-      currentHoveredObject = object;
+    // Find the object with userData.type by traversing up the parent chain
+    let targetObject = intersects[0].object;
+    while (targetObject && !targetObject.userData?.type) {
+      targetObject = targetObject.parent;
+    }
+    
+    // If still no type found, try the immediate parent (for some models)
+    if (!targetObject || !targetObject.userData?.type) {
+      targetObject = intersects[0].object.parent;
+    }
+    
+    if (targetObject && targetObject.userData && targetObject.userData.type) {
+      currentHoveredObject = targetObject;
     }
   }
   
   // If panel is open, hide any existing hints and reset hovered object
   if (isPanelOpen) {
     if (hoveredObject) {
-      gsap.to(hoveredObject.scale, {
-        x: 1,
-        y: 1,
-        z: 1,
-        duration: 0.3
-      });
+      // Don't reset scale for cat (it's a game object with special scaling)
+      if (hoveredObject.userData?.type !== 'cat') {
+        gsap.to(hoveredObject.scale, {
+          x: 1,
+          y: 1,
+          z: 1,
+          duration: 0.3
+        });
+      }
       hoveredObject = null;
     }
     hintText.style.display = 'none';
@@ -1418,12 +1436,15 @@ function onMouseMove(event) {
   
   // If we had a hovered object and now we don't, or it's a different object, reset the old one
   if (hoveredObject && hoveredObject !== currentHoveredObject) {
-    gsap.to(hoveredObject.scale, {
-      x: 1,
-      y: 1,
-      z: 1,
-      duration: 0.3
-    });
+    // Don't reset scale for cat (it's a game object with special scaling)
+    if (hoveredObject.userData?.type !== 'cat') {
+      gsap.to(hoveredObject.scale, {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 0.3
+      });
+    }
     document.body.style.cursor = 'default';
     // Hide hint text
     hintText.style.display = 'none';
@@ -1433,12 +1454,16 @@ function onMouseMove(event) {
   // If we have a new hovered object that's different from the current one
   if (currentHoveredObject && currentHoveredObject !== hoveredObject) {
     hoveredObject = currentHoveredObject;
-    gsap.to(hoveredObject.scale, {
-      x: 1.05,
-      y: 1.05,
-      z: 1.05,
-      duration: 0.3
-    });
+    
+    // Don't apply hover scale to cat (it's a game object with special scaling)
+    if (hoveredObject.userData?.type !== 'cat') {
+      gsap.to(hoveredObject.scale, {
+        x: 1.05,
+        y: 1.05,
+        z: 1.05,
+        duration: 0.3
+      });
+    }
     document.body.style.cursor = 'pointer';
     
     // Show hint text
@@ -1491,10 +1516,39 @@ function onMouseClick(event) {
   const intersects = raycaster.intersectObjects(interactiveObjects, true);
   
   if (intersects.length > 0) {
-    const object = intersects[0].object.parent;
-    if (object.userData && object.userData.type) {
+    // Find the object with userData.type by traversing up the parent chain
+    let targetObject = intersects[0].object;
+    while (targetObject && !targetObject.userData?.type) {
+      targetObject = targetObject.parent;
+    }
+    
+    // If still no type found, try the immediate parent (for some models)
+    if (!targetObject || !targetObject.userData?.type) {
+      targetObject = intersects[0].object.parent;
+    }
+    
+    if (targetObject && targetObject.userData && targetObject.userData.type) {
+      // Handle plant (cactus) click - spawn/remove cat
+      if (targetObject.userData.type === 'plant') {
+        if (isCatGameActive()) {
+          // If cat is already active, remove it
+          removeCat(scene, interactiveObjects);
+        } else {
+          // Spawn cat (will spawn near chair, position handled in catGame.js)
+          spawnCat(scene, null, interactiveObjects);
+        }
+        return; // Don't show panel for plant
+      }
+      
+      // Handle cat click - play audio and spin
+      if (targetObject.userData.type === 'cat') {
+        console.log('Cat clicked! Calling handleCatClick...');
+        handleCatClick();
+        return; // Don't show panel for cat
+      }
+      
       // Play sound when monitor is clicked
-      if (object.userData.type === 'monitors' && monitorPressedSound) {
+      if (targetObject.userData.type === 'monitors' && monitorPressedSound) {
         try {
           monitorPressedSound.currentTime = 0;
           monitorPressedSound.play().catch(err => {
@@ -1506,9 +1560,9 @@ function onMouseClick(event) {
       }
       
       if (currentView === 'overview') {
-        zoomToObject(object);
+        zoomToObject(targetObject);
         // Delay showing panel until zoom completes (after 1.5s animation)
-        setTimeout(() => showInfoPanel(object.userData.info, object.userData.type), 1600);
+        setTimeout(() => showInfoPanel(targetObject.userData.info, targetObject.userData.type), 1600);
       }
     }
   }
@@ -2060,6 +2114,9 @@ scene.add(floorPlant);
 
 // Intro message removed - no longer needed
 
+// Initialize cat game (load model in background)
+initCatGame(scene);
+
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
@@ -2069,6 +2126,7 @@ function animate() {
   // Subtle animations
   monitors.position.y = 0 + Math.sin(time * 0.5) * 0.02;
   
+  // Always update controls
   controls.update();
   renderer.render(scene, camera);
 }
