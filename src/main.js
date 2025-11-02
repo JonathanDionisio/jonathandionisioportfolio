@@ -2,7 +2,44 @@ import { gsap } from 'gsap';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { createAboutMePanel, hideAboutMePanel } from './components/aboutMe.js';
+import { createTechnicalSkillsPanel, hideTechnicalSkillsPanel } from './components/technicalSkills.js';
 import './style.css';
+
+// Load audio files
+let bookHoverSound = null;
+let monitorPressedSound = null;
+
+try {
+  const bookHoverUrl = new URL('./assets/audio/bookhover.mp3', import.meta.url).href;
+  bookHoverSound = new Audio(bookHoverUrl);
+  bookHoverSound.volume = 0.3;
+  bookHoverSound.preload = 'auto';
+} catch (e) {
+  console.warn('Could not load book hover sound:', e);
+  try {
+    bookHoverSound = new Audio('/src/assets/audio/bookhover.mp3');
+    bookHoverSound.volume = 0.3;
+    bookHoverSound.preload = 'auto';
+  } catch (e2) {
+    console.warn('Could not load book hover sound from fallback path:', e2);
+  }
+}
+
+try {
+  const monitorPressedUrl = new URL('./assets/audio/monitorpressed.mp3', import.meta.url).href;
+  monitorPressedSound = new Audio(monitorPressedUrl);
+  monitorPressedSound.volume = 0.3;
+  monitorPressedSound.preload = 'auto';
+} catch (e) {
+  console.warn('Could not load monitor pressed sound:', e);
+  try {
+    monitorPressedSound = new Audio('/src/assets/audio/monitorpressed.mp3');
+    monitorPressedSound.volume = 0.3;
+    monitorPressedSound.preload = 'auto';
+  } catch (e2) {
+    console.warn('Could not load monitor pressed sound from fallback path:', e2);
+  }
+}
 
 // Load floor texture URL - Vite handles this automatically
 let floorTextureUrl;
@@ -425,7 +462,7 @@ function createChair() {
     new THREE.BoxGeometry(1, 1.2, 0.1),
     chairMaterial
   );
-  back.position.set(0, 1.5, -0.5);
+  back.position.set(0, 1.5, 0.5);
   back.castShadow = true;
   chairGroup.add(back);
   
@@ -465,7 +502,7 @@ function createChair() {
   
   // Position chair on the other side (left side of desk, not in front)
   // Desk is at (-0.5, 0.05, -0.5), extends from x=-3 to x=2 (5 units wide)
-  chairGroup.position.set(-0.5, 0.05, -1.8); // Positioned on left side of desk
+  chairGroup.position.set(-0.5, 0.05, 1.8); // Positioned on left side of desk
   return chairGroup;
 }
 
@@ -473,20 +510,67 @@ function createChair() {
 function createMonitors() {
   const monitorsGroup = new THREE.Group();
   
+  // Load desktop monitor GIF as texture
+  // Note: Animated GIFs in Three.js require manual frame updates for full animation
+  // For now, this will display the GIF (first frame will show, animation needs additional handling)
+  let monitorGifTexture = null;
+  const textureLoader = new THREE.TextureLoader();
+  
+  try {
+    const gifUrl = new URL('./assets/images/desktopmonitor.gif', import.meta.url).href;
+    monitorGifTexture = textureLoader.load(gifUrl, 
+      (texture) => {
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        console.log('Monitor GIF texture loaded');
+      },
+      undefined,
+      (error) => {
+        console.warn('Could not load monitor GIF:', error);
+        // Try fallback path
+        try {
+          monitorGifTexture = textureLoader.load('/src/assets/images/desktopmonitor.gif',
+            (texture) => {
+              texture.wrapS = THREE.ClampToEdgeWrapping;
+              texture.wrapT = THREE.ClampToEdgeWrapping;
+              texture.minFilter = THREE.LinearFilter;
+              texture.magFilter = THREE.LinearFilter;
+            },
+            undefined,
+            (err) => {
+              console.warn('Could not load monitor GIF from fallback:', err);
+            }
+          );
+        } catch (e2) {
+          console.warn('Error loading monitor GIF:', e2);
+        }
+      }
+    );
+  } catch (e) {
+    console.warn('Error setting up monitor GIF texture:', e);
+  }
+  
+  // For animated GIF support, we'd need to use a library or manually update frames
+  // For now, the GIF will display (may show first frame only without additional animation handling)
+  
   // Left monitor - centered better
   const leftScreen = new THREE.Mesh(
     new THREE.BoxGeometry(0.7, 0.5, 0.05),
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.7 })
   );
-  leftScreen.position.set(-0.6, 2.2, 0.3); // Positioned on back of desk, slightly to left
+  leftScreen.position.set(-0.6, 2.2, -0.3); // Positioned on back of desk, slightly to left
   leftScreen.castShadow = true;
   monitorsGroup.add(leftScreen);
   
   const leftDisplay = new THREE.Mesh(
     new THREE.PlaneGeometry(0.65, 0.45),
-    new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
+    monitorGifTexture 
+      ? new THREE.MeshBasicMaterial({ map: monitorGifTexture })
+      : new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
   );
-  leftDisplay.position.set(-0.6, 2.2, 0.33);
+  leftDisplay.position.set(-0.6, 2.2, -0.27);
   monitorsGroup.add(leftDisplay);
   
   // Right monitor (main monitor) - centered
@@ -494,15 +578,17 @@ function createMonitors() {
     new THREE.BoxGeometry(1.0, 0.6, 0.05),
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.7 })
   );
-  rightScreen.position.set(0.4, 2.2, 0.3); // Positioned on back of desk, centered
+  rightScreen.position.set(0.4, 2.2, -0.3); // Positioned on back of desk, centered
   rightScreen.castShadow = true;
   monitorsGroup.add(rightScreen);
   
   const rightDisplay = new THREE.Mesh(
     new THREE.PlaneGeometry(0.95, 0.55),
-    new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
+    monitorGifTexture 
+      ? new THREE.MeshBasicMaterial({ map: monitorGifTexture })
+      : new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
   );
-  rightDisplay.position.set(0.4, 2.2, 0.33);
+  rightDisplay.position.set(0.4, 2.2, -0.27);
   monitorsGroup.add(rightDisplay);
   
   // Stands
@@ -511,14 +597,14 @@ function createMonitors() {
     new THREE.BoxGeometry(0.12, 0.15, 0.12),
     standMaterial
   );
-  leftStand.position.set(-0.6, 1.9, 0.3);
+  leftStand.position.set(-0.6, 1.9, -0.3);
   monitorsGroup.add(leftStand);
   
   const rightStand = new THREE.Mesh(
     new THREE.BoxGeometry(0.12, 0.15, 0.12),
     standMaterial
   );
-  rightStand.position.set(0.4, 1.9, 0.3);
+  rightStand.position.set(0.4, 1.9, -0.3);
   monitorsGroup.add(rightStand);
   
   monitorsGroup.position.set(-0.5, 0.09, -0.5); // Match desk position
@@ -537,7 +623,7 @@ function createKeyboardMouse() {
     new THREE.BoxGeometry(1.0, 0.05, 0.35),
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 })
   );
-  keyboard.position.set(0, 1.78, -0.2); // Positioned in front of monitors, centered
+  keyboard.position.set(0, 1.78, 0.3); // Positioned in front of monitors, centered
   keyboard.rotation.x = 0.05; // Slight tilt
   keyboard.castShadow = true;
   kbGroup.add(keyboard);
@@ -547,7 +633,7 @@ function createKeyboardMouse() {
     new THREE.BoxGeometry(0.1, 0.05, 0.15),
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 })
   );
-  mouse.position.set(0.6, 1.78, -0.15); // To the right of keyboard
+  mouse.position.set(0.9, 1.78, 0.4); // To the right of keyboard
   mouse.rotation.x = 0.05;
   mouse.castShadow = true;
   kbGroup.add(mouse);
@@ -943,6 +1029,35 @@ const mouse = new THREE.Vector2();
 let hoveredObject = null;
 const introMessage = document.querySelector('.intro-message');
 
+// Hint text element for hover hints
+const hintText = document.createElement('div');
+hintText.id = 'hover-hint';
+hintText.style.cssText = `
+  position: fixed;
+  background: rgba(15, 15, 15, 0.95);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 10000;
+  pointer-events: none;
+  display: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(74, 158, 255, 0.4);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+`;
+document.body.appendChild(hintText);
+
+// Object hint labels
+const objectHints = {
+  'monitors': 'Click to view Technical Skills',
+  'books': 'Click to view Projects & Achievements',
+  'poster': 'Click to view About Me',
+  'plant': 'Click to view Contact'
+};
+
 // UI Panel
 const infoPanel = document.createElement('div');
 infoPanel.id = 'info-panel';
@@ -1002,14 +1117,13 @@ function zoomToObject(object) {
     // Adjust lookAt target to position art on left side
     // Don't set it here yet - will be set in the animation callbacks
   } else if (objectType === 'monitors') {
-  
+    // Monitors are facing forward (positive Z direction)
+    // Position camera in front of monitors to see the displays
     const monitorCenter = new THREE.Vector3(objectCenter.x, objectCenter.y, objectCenter.z);
-    const backWallZ = -roomSize / 2; 
-    const cameraZ = Math.max(monitorCenter.z - 1.5, backWallZ + 1.5); // Behind monitors (negative Z), but stay in front of wall
     targetPosition = new THREE.Vector3(
-      monitorCenter.x,        // Directly in front (no x offset for centered view)
-      monitorCenter.y + 0.5,   // Slightly elevated for better view angle
-      cameraZ                   // Position behind monitors to see screens (negative Z from monitor position)
+      monitorCenter.x,        // Centered horizontally
+      monitorCenter.y,        // Same height as monitor center for direct view
+      monitorCenter.z + 1.5   // Position in front of monitors (positive Z offset)
     );
   } else if (objectType === 'books') {
     // Bookshelf: view from front, centered on books
@@ -1044,10 +1158,10 @@ function zoomToObject(object) {
         controls.target.copy(lookAtTarget);
         camera.lookAt(lookAtTarget);
       } else if (objectType === 'monitors') {
-        // For monitors, look at the center but slightly lower for natural viewing angle
+        // For monitors, look directly at the center of the displays
         const lookAtTarget = new THREE.Vector3(
           objectCenter.x,
-          objectCenter.y - 0.1,  // Slight downward angle for natural view
+          objectCenter.y,  // Center on monitor displays
           objectCenter.z
         );
         controls.target.copy(lookAtTarget);
@@ -1068,10 +1182,10 @@ function zoomToObject(object) {
         );
         controls.target.copy(lookAtTarget);
       } else if (objectType === 'monitors') {
-        // For monitors, look at center with slight downward angle
+        // For monitors, look directly at the center of the displays
         const lookAtTarget = new THREE.Vector3(
           objectCenter.x,
-          objectCenter.y - 0.1,  // Slight downward angle
+          objectCenter.y,  // Center on monitor displays
           objectCenter.z
         );
         controls.target.copy(lookAtTarget);
@@ -1108,49 +1222,14 @@ function zoomOut() {
     z: controls.target.z
   };
   
-  // Only apply special path for monitors (go up then forward, smooth continuous motion)
-  if (currentView === 'monitors') {
-    const currentPos = camera.position.clone();
-    
-    // Create a smooth arc: first go up, then continue forward without stopping
-    // Use a bezier-like path or animate through intermediate points smoothly
-    const intermediateUp = new THREE.Vector3(
-      currentPos.x,
-      currentPos.y + 3,  // Go up
-      currentPos.z
-    );
-    
-    // Animate through the up position, but don't stop there - continue smoothly
-    // Use a timeline to chain animations without pause
-    const tl = gsap.timeline();
-    
-    // Move up
-    tl.to(camera.position, {
-      x: intermediateUp.x,
-      y: intermediateUp.y,
-      z: intermediateUp.z,
-      duration: 0.6,
-      ease: "power2.out"
-    });
-    
-    // Continue forward to overview position (no pause between)
-    tl.to(camera.position, {
-      x: originalCameraPosition.x,
-      y: originalCameraPosition.y,
-      z: originalCameraPosition.z,
-      duration: 0.9,
-      ease: "power2.in"
-    }, "-=0.2"); // Start 0.2s before previous animation ends for smooth transition
-  } else {
-    // For other objects, use direct smooth animation (no intermediate step)
-    gsap.to(camera.position, {
-      x: originalCameraPosition.x,
-      y: originalCameraPosition.y,
-      z: originalCameraPosition.z,
-      duration: 1.5,
-      ease: "power2.inOut"
-    });
-  }
+  // Direct smooth animation back to original position (no need for up movement)
+  gsap.to(camera.position, {
+    x: originalCameraPosition.x,
+    y: originalCameraPosition.y,
+    z: originalCameraPosition.z,
+    duration: 1.5,
+    ease: "power2.inOut"
+  });
   
   // Animate controls target to center smoothly
   gsap.to(targetProxy, {
@@ -1193,6 +1272,17 @@ function showInfoPanel(info, objectType = null) {
     infoPanel.style.transform = 'translateY(-50%)';
     infoPanel.style.width = '90%';
     infoPanel.style.maxWidth = '700px';
+  } else if (viewType === 'monitors') {
+    // Use the Technical Skills component
+    createTechnicalSkillsPanel(infoContent);
+    
+    // Center the panel for technical skills
+    infoPanel.style.left = '50%';
+    infoPanel.style.right = 'auto';
+    infoPanel.style.top = '50%';
+    infoPanel.style.transform = 'translate(-50%, -50%)';
+    infoPanel.style.width = '95%';
+    infoPanel.style.maxWidth = '900px';
   } else {
     // Use simple text display for other objects
     infoTitle.textContent = `${info.icon} ${info.title}`;
@@ -1209,8 +1299,8 @@ function showInfoPanel(info, objectType = null) {
     infoPanel.style.maxWidth = '600px';
   }
   
-  // Hide title for About Me (it has its own header)
-  if (viewType === 'poster') {
+  // Hide title for About Me and Technical Skills (they have their own headers)
+  if (viewType === 'poster' || viewType === 'monitors') {
     infoTitle.style.display = 'none';
   } else {
     infoTitle.style.display = 'block';
@@ -1243,6 +1333,10 @@ function hideInfoPanel() {
   if (currentView === 'poster') {
     hideAboutMePanel(infoContent);
   }
+  // Hide Technical Skills panel if it's active
+  if (currentView === 'monitors') {
+    hideTechnicalSkillsPanel(infoContent);
+  }
   
   gsap.to(infoPanel, {
     opacity: 0,
@@ -1257,6 +1351,9 @@ function hideInfoPanel() {
 }
 
 function onMouseMove(event) {
+  // Don't show hover hints if panel is open
+  const isPanelOpen = infoPanel.style.display !== 'none';
+  
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
@@ -1264,11 +1361,27 @@ function onMouseMove(event) {
   const intersects = raycaster.intersectObjects(interactiveObjects, true);
   
   let currentHoveredObject = null;
-  if (intersects.length > 0 && !isAnimating) {
+  if (intersects.length > 0 && !isAnimating && !isPanelOpen) {
     const object = intersects[0].object.parent;
     if (object.userData && object.userData.type) {
       currentHoveredObject = object;
     }
+  }
+  
+  // If panel is open, hide any existing hints and reset hovered object
+  if (isPanelOpen) {
+    if (hoveredObject) {
+      gsap.to(hoveredObject.scale, {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 0.3
+      });
+      hoveredObject = null;
+    }
+    hintText.style.display = 'none';
+    document.body.style.cursor = 'default';
+    return;
   }
   
   // If we had a hovered object and now we don't, or it's a different object, reset the old one
@@ -1280,6 +1393,8 @@ function onMouseMove(event) {
       duration: 0.3
     });
     document.body.style.cursor = 'default';
+    // Hide hint text
+    hintText.style.display = 'none';
     hoveredObject = null;
   }
   
@@ -1293,6 +1408,42 @@ function onMouseMove(event) {
       duration: 0.3
     });
     document.body.style.cursor = 'pointer';
+    
+    // Show hint text
+    if (hoveredObject.userData && hoveredObject.userData.type) {
+      const objectType = hoveredObject.userData.type;
+      const hint = objectHints[objectType] || 'Click to view';
+      hintText.textContent = hint;
+      hintText.style.display = 'block';
+      
+      // Position hint text near mouse cursor
+      hintText.style.left = `${event.clientX + 15}px`;
+      hintText.style.top = `${event.clientY + 15}px`;
+      
+      // Animate in
+      gsap.fromTo(hintText,
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.2, ease: 'power2.out' }
+      );
+      
+      // Play hover sound for bookshelf and wallart
+      if ((objectType === 'books' || objectType === 'poster') && bookHoverSound) {
+        try {
+          bookHoverSound.currentTime = 0;
+          bookHoverSound.play().catch(err => {
+            console.debug('Could not play book hover sound:', err);
+          });
+        } catch (e) {
+          console.debug('Error playing book hover sound:', e);
+        }
+      }
+    }
+  }
+  
+  // Update hint text position as mouse moves
+  if (hoveredObject && hintText.style.display !== 'none' && !isPanelOpen) {
+    hintText.style.left = `${event.clientX + 15}px`;
+    hintText.style.top = `${event.clientY + 15}px`;
   }
 }
 
@@ -1318,6 +1469,18 @@ function onMouseClick(event) {
   if (intersects.length > 0) {
     const object = intersects[0].object.parent;
     if (object.userData && object.userData.type) {
+      // Play sound when monitor is clicked
+      if (object.userData.type === 'monitors' && monitorPressedSound) {
+        try {
+          monitorPressedSound.currentTime = 0;
+          monitorPressedSound.play().catch(err => {
+            console.debug('Could not play monitor pressed sound:', err);
+          });
+        } catch (e) {
+          console.debug('Error playing monitor pressed sound:', e);
+        }
+      }
+      
       if (currentView === 'overview') {
         zoomToObject(object);
         // Delay showing panel until zoom completes (after 1.5s animation)

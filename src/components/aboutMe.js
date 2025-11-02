@@ -72,7 +72,7 @@ export function createAboutMePanel(panelContainer) {
   const objectiveSection = createSection('Objective', 'objective-section');
   const objectiveText = document.createElement('p');
   objectiveText.className = 'objective-text';
-  objectiveText.textContent = "To leverage my skills in software development and 3D graphics to create innovative digital experiences that make a positive impact. I aim to work with cutting-edge technologies and contribute to meaningful projects while continuously learning and growing professionally.";
+  objectiveText.textContent = "To develop and expand my technical skills through hands-on experience in real-world environments, while nurturing my passion for game and mobile development. I aim to gain diverse work experiences that will strengthen my resume and portfolio, ultimately preparing me for a career in a field I am truly passionate about.";
   objectiveSection.appendChild(objectiveText);
   wrapper.appendChild(objectiveSection);
   
