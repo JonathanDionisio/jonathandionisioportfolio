@@ -1002,13 +1002,14 @@ function zoomToObject(object) {
     // Adjust lookAt target to position art on left side
     // Don't set it here yet - will be set in the animation callbacks
   } else if (objectType === 'monitors') {
-    // Monitors: view from front and slightly above (focus on the screens)
-    // Monitors are at y ~2.2 within the group
+  
     const monitorCenter = new THREE.Vector3(objectCenter.x, objectCenter.y, objectCenter.z);
+    const backWallZ = -roomSize / 2; 
+    const cameraZ = Math.max(monitorCenter.z - 1.5, backWallZ + 1.5); // Behind monitors (negative Z), but stay in front of wall
     targetPosition = new THREE.Vector3(
-      monitorCenter.x + 1.2,  // In front of monitors
-      monitorCenter.y + 0.3,  // Slightly above
-      monitorCenter.z + 0.8   // Moderate distance
+      monitorCenter.x,        // Directly in front (no x offset for centered view)
+      monitorCenter.y + 0.5,   // Slightly elevated for better view angle
+      cameraZ                   // Position behind monitors to see screens (negative Z from monitor position)
     );
   } else if (objectType === 'books') {
     // Bookshelf: view from front, centered on books
@@ -1042,6 +1043,15 @@ function zoomToObject(object) {
         );
         controls.target.copy(lookAtTarget);
         camera.lookAt(lookAtTarget);
+      } else if (objectType === 'monitors') {
+        // For monitors, look at the center but slightly lower for natural viewing angle
+        const lookAtTarget = new THREE.Vector3(
+          objectCenter.x,
+          objectCenter.y - 0.1,  // Slight downward angle for natural view
+          objectCenter.z
+        );
+        controls.target.copy(lookAtTarget);
+        camera.lookAt(lookAtTarget);
       } else {
         // For all other objects, center on the object
         controls.target.copy(objectCenter);
@@ -1054,6 +1064,14 @@ function zoomToObject(object) {
         const lookAtTarget = new THREE.Vector3(
           objectCenter.x - 4,  // Offset left for wall art
           objectCenter.y,
+          objectCenter.z
+        );
+        controls.target.copy(lookAtTarget);
+      } else if (objectType === 'monitors') {
+        // For monitors, look at center with slight downward angle
+        const lookAtTarget = new THREE.Vector3(
+          objectCenter.x,
+          objectCenter.y - 0.1,  // Slight downward angle
           objectCenter.z
         );
         controls.target.copy(lookAtTarget);
@@ -1090,14 +1108,49 @@ function zoomOut() {
     z: controls.target.z
   };
   
-  // Animate both camera position and target smoothly
-  gsap.to(camera.position, {
-    x: originalCameraPosition.x,
-    y: originalCameraPosition.y,
-    z: originalCameraPosition.z,
-    duration: 1.5,
-    ease: "power2.inOut"
-  });
+  // Only apply special path for monitors (go up then forward, smooth continuous motion)
+  if (currentView === 'monitors') {
+    const currentPos = camera.position.clone();
+    
+    // Create a smooth arc: first go up, then continue forward without stopping
+    // Use a bezier-like path or animate through intermediate points smoothly
+    const intermediateUp = new THREE.Vector3(
+      currentPos.x,
+      currentPos.y + 3,  // Go up
+      currentPos.z
+    );
+    
+    // Animate through the up position, but don't stop there - continue smoothly
+    // Use a timeline to chain animations without pause
+    const tl = gsap.timeline();
+    
+    // Move up
+    tl.to(camera.position, {
+      x: intermediateUp.x,
+      y: intermediateUp.y,
+      z: intermediateUp.z,
+      duration: 0.6,
+      ease: "power2.out"
+    });
+    
+    // Continue forward to overview position (no pause between)
+    tl.to(camera.position, {
+      x: originalCameraPosition.x,
+      y: originalCameraPosition.y,
+      z: originalCameraPosition.z,
+      duration: 0.9,
+      ease: "power2.in"
+    }, "-=0.2"); // Start 0.2s before previous animation ends for smooth transition
+  } else {
+    // For other objects, use direct smooth animation (no intermediate step)
+    gsap.to(camera.position, {
+      x: originalCameraPosition.x,
+      y: originalCameraPosition.y,
+      z: originalCameraPosition.z,
+      duration: 1.5,
+      ease: "power2.inOut"
+    });
+  }
   
   // Animate controls target to center smoothly
   gsap.to(targetProxy, {
