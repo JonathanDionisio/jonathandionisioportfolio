@@ -96,11 +96,12 @@ canvas {
 /* Info Panel Styles */
 #info-panel {
   position: fixed;
-  top: 50%;
+  top: calc(50% + 40px);
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90%;
   max-width: 600px;
+  max-height: calc(100vh - 80px);
   background: rgba(15, 15, 15, 0.98);
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -116,9 +117,10 @@ canvas {
 
 /* When About Me is displayed, adjust panel */
 #info-panel:has(.about-me-wrapper) {
-  max-height: 90vh;
+  max-height: calc(100vh - 80px);
   overflow: hidden;
   width: 80vh;
+  top: calc(50% + 40px);
 }
 
 #close-button {
@@ -159,6 +161,9 @@ canvas {
   color: rgba(255, 255, 255, 0.9);
   flex: 1;
   overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* When About Me is displayed, adjust panel */

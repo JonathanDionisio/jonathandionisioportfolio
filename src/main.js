@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { createAboutMePanel, hideAboutMePanel } from './components/aboutMe.js';
 import { createProjectsAchievementsPanel, hideProjectsAchievementsPanel } from './components/projectsAchievements.js';
 import { createTechnicalSkillsPanel, hideTechnicalSkillsPanel } from './components/technicalSkills.js';
+import { createNavigation, setNavigationDisabled } from './components/navigation.js';
 import './style.css';
 
 // Load audio files
@@ -1254,6 +1255,9 @@ function zoomOut() {
 }
 
 function showInfoPanel(info, objectType = null) {
+  // Disable navigation when panel is open
+  setNavigationDisabled(true);
+  
   // Use provided objectType (from parameter) to determine panel position
   // Only use currentView as fallback if objectType is not provided
   const viewType = objectType !== null ? objectType : currentView;
@@ -1269,10 +1273,11 @@ function showInfoPanel(info, objectType = null) {
     // Wall art: position panel on left side so wall art is visible on right
     infoPanel.style.left = '5%';
     infoPanel.style.right = 'auto';
-    infoPanel.style.top = '50%';
+    infoPanel.style.top = 'calc(50% + 40px)';
     infoPanel.style.transform = 'translateY(-50%)';
     infoPanel.style.width = '90%';
     infoPanel.style.maxWidth = '700px';
+    infoPanel.style.maxHeight = 'calc(100vh - 80px)';
   } else if (viewType === 'monitors') {
     // Use the Technical Skills component
     createTechnicalSkillsPanel(infoContent);
@@ -1280,10 +1285,11 @@ function showInfoPanel(info, objectType = null) {
     // Center the panel for technical skills
     infoPanel.style.left = '50%';
     infoPanel.style.right = 'auto';
-    infoPanel.style.top = '50%';
+    infoPanel.style.top = 'calc(50% + 40px)';
     infoPanel.style.transform = 'translate(-50%, -50%)';
     infoPanel.style.width = '95%';
     infoPanel.style.maxWidth = '900px';
+    infoPanel.style.maxHeight = 'calc(100vh - 80px)';
   } else if (viewType === 'books') {
     // Use the Projects & Achievements component
     createProjectsAchievementsPanel(infoContent);
@@ -1291,10 +1297,11 @@ function showInfoPanel(info, objectType = null) {
     // Center the panel for projects and achievements
     infoPanel.style.left = '50%';
     infoPanel.style.right = 'auto';
-    infoPanel.style.top = '50%';
+    infoPanel.style.top = 'calc(50% + 40px)';
     infoPanel.style.transform = 'translate(-50%, -50%)';
     infoPanel.style.width = '95%';
     infoPanel.style.maxWidth = '900px';
+    infoPanel.style.maxHeight = 'calc(100vh - 80px)';
   } else {
     // Use simple text display for other objects
     infoTitle.textContent = `${info.icon} ${info.title}`;
@@ -1305,10 +1312,11 @@ function showInfoPanel(info, objectType = null) {
     // All other objects: center the panel
     infoPanel.style.left = '50%';
     infoPanel.style.right = 'auto';
-    infoPanel.style.top = '50%';
+    infoPanel.style.top = 'calc(50% + 40px)';
     infoPanel.style.transform = 'translate(-50%, -50%)';
     infoPanel.style.width = '90%';
     infoPanel.style.maxWidth = '600px';
+    infoPanel.style.maxHeight = 'calc(100vh - 80px)';
   }
   
   // Hide title for About Me, Technical Skills, and Projects & Achievements (they have their own headers)
@@ -1327,20 +1335,25 @@ function showInfoPanel(info, objectType = null) {
       opacity: 1, 
       duration: 0.5,
       onComplete: () => {
-        // Ensure transform is maintained after animation
-        if (viewType === 'poster') {
-          infoPanel.style.transform = 'translateY(-50%)';
-          infoPanel.style.left = '5%';
-          infoPanel.style.right = 'auto';
-        } else {
-          infoPanel.style.transform = 'translate(-50%, -50%)';
-        }
+      // Ensure transform is maintained after animation
+      if (viewType === 'poster') {
+        infoPanel.style.transform = 'translateY(-50%)';
+        infoPanel.style.top = 'calc(50% + 40px)';
+        infoPanel.style.left = '5%';
+        infoPanel.style.right = 'auto';
+      } else {
+        infoPanel.style.transform = 'translate(-50%, -50%)';
+        infoPanel.style.top = 'calc(50% + 40px)';
+      }
       }
     }
   );
 }
 
 function hideInfoPanel() {
+  // Enable navigation when panel is closed
+  setNavigationDisabled(false);
+  
   // Hide About Me panel if it's active
   if (currentView === 'poster') {
     hideAboutMePanel(infoContent);
@@ -1509,6 +1522,48 @@ function onMouseClick(event) {
 closeButton.addEventListener('click', () => {
   hideInfoPanel();
   zoomOut();
+});
+
+// Close panel on Escape key
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && infoPanel.style.display !== 'none') {
+    hideInfoPanel();
+    if (currentView !== 'overview') {
+      zoomOut();
+    }
+  }
+});
+
+// Initialize Navigation
+createNavigation();
+
+// Handle navigation button clicks
+window.addEventListener('navButtonClick', (event) => {
+  const { type, info } = event.detail;
+  
+  // If already in the target view, just show the panel
+  if (currentView === type && infoPanel.style.display !== 'none') {
+    return; // Already showing
+  }
+  
+  // If currently viewing something else, zoom out first
+  if (currentView !== 'overview') {
+    zoomOut();
+    setTimeout(() => {
+      // Find the corresponding object and show its panel
+      showInfoPanel(info, type);
+    }, 1600);
+  } else {
+    // If in overview, find the object and zoom to it
+    const targetObject = interactiveObjects.find(obj => obj.userData?.type === type);
+    if (targetObject) {
+      zoomToObject(targetObject);
+      setTimeout(() => showInfoPanel(info, type), 1600);
+    } else {
+      // If object not found, just show panel directly
+      showInfoPanel(info, type);
+    }
+  }
 });
 
 window.addEventListener('mousemove', onMouseMove);
