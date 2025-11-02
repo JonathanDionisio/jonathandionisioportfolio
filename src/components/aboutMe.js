@@ -140,6 +140,121 @@ export function createAboutMePanel(panelContainer) {
   goalsSection.appendChild(goalsList);
   wrapper.appendChild(goalsSection);
   
+  // CV Download Button
+  const cvDownloadContainer = document.createElement('div');
+  cvDownloadContainer.className = 'cv-download-container';
+  cvDownloadContainer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0;
+    padding: 0 20px;
+  `;
+  
+  const downloadButton = document.createElement('button');
+  downloadButton.className = 'cv-download-button';
+  downloadButton.type = 'button';
+  downloadButton.style.cssText = `
+    background: linear-gradient(135deg, rgba(74, 158, 255, 0.2), rgba(100, 181, 246, 0.2));
+    border: 2px solid rgba(74, 158, 255, 0.4);
+    border-radius: 12px;
+    padding: 15px 35px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: inherit;
+    outline: none;
+  `;
+  
+  // Create button content with icon
+
+  
+  const buttonText = document.createElement('span');
+  buttonText.textContent = 'Download CV';
+  
+  
+ 
+  downloadButton.appendChild(buttonText);
+
+  
+  // Get CV PDF URL - PDF is directly in assets folder
+  let cvPdfUrl = '';
+  try {
+    cvPdfUrl = new URL('../assets/Jonathan_Dionisio_CV.pdf', import.meta.url).href;
+  } catch (e) {
+    // Fallback path
+    cvPdfUrl = '/src/assets/Jonathan_Dionisio_CV.pdf';
+  }
+  
+  // Handle download on click with proper file handling
+  downloadButton.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Fetch the file as a blob to ensure it's properly loaded
+      const response = await fetch(cvPdfUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'Jonathan_Dionisio_CV.pdf';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      // Button click animation
+      gsap.to(downloadButton, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+    } catch (error) {
+      console.error('Error downloading CV:', error);
+      alert('Failed to download CV. Please check if the file exists.');
+    }
+  });
+  
+  // Add hover effects
+  downloadButton.addEventListener('mouseenter', () => {
+    downloadButton.style.background = 'linear-gradient(135deg, rgba(74, 158, 255, 0.3), rgba(100, 181, 246, 0.3))';
+    downloadButton.style.borderColor = 'rgba(74, 158, 255, 0.6)';
+    downloadButton.style.boxShadow = '0 6px 20px rgba(74, 158, 255, 0.4)';
+    downloadButton.style.transform = 'translateY(-3px)';
+  });
+  
+  downloadButton.addEventListener('mouseleave', () => {
+    downloadButton.style.background = 'linear-gradient(135deg, rgba(74, 158, 255, 0.2), rgba(100, 181, 246, 0.2))';
+    downloadButton.style.borderColor = 'rgba(74, 158, 255, 0.4)';
+    downloadButton.style.boxShadow = '0 4px 15px rgba(74, 158, 255, 0.2)';
+    downloadButton.style.transform = 'translateY(0)';
+  });
+  
+  // Add focus styles for accessibility
+  downloadButton.addEventListener('focus', () => {
+    downloadButton.style.outline = '2px solid rgba(74, 158, 255, 0.5)';
+    downloadButton.style.outlineOffset = '2px';
+  });
+  
+  downloadButton.addEventListener('blur', () => {
+    downloadButton.style.outline = 'none';
+  });
+  
+  cvDownloadContainer.appendChild(downloadButton);
+  wrapper.appendChild(cvDownloadContainer);
+  
   // Append wrapper to panel
   panelContainer.appendChild(wrapper);
   
