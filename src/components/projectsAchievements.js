@@ -155,7 +155,22 @@ function getWebProjectsData() {
       ],
       technologies: ['React', 'Node.js', 'MongoDB'],
       website: null // Add your website URL here if available
+    },
+     {
+      name: 'Portfolio Website',
+      description: 'My first portfolio website showcasing my projects and achievements. I was able to test my skills in web development and design by creating this portfolio site using React, Node.js, and Three.js for 3D graphics. The portfolio dont have much projects and achievements yet since I am still a student and just started my journey in web development. But I will update it regularly as I complete more projects and achieve more milestones in my career.',
+      images: [
+        'portfolio1.png',
+        'portfolio2.png',
+        'portfolio3.png',
+        'portfolio4.png',
+        'portfolio5.png',
+    
+      ],
+      technologies: ['React', 'Node.js', 'Three.js'],
+      website: null // Add your website URL here if available
     }
+    
   ];
 }
 
