@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { createAboutMePanel, hideAboutMePanel } from './components/aboutMe.js';
+import { createProjectsAchievementsPanel, hideProjectsAchievementsPanel } from './components/projectsAchievements.js';
 import { createTechnicalSkillsPanel, hideTechnicalSkillsPanel } from './components/technicalSkills.js';
 import './style.css';
 
@@ -1055,7 +1056,7 @@ const objectHints = {
   'monitors': 'Click to view Technical Skills',
   'books': 'Click to view Projects & Achievements',
   'poster': 'Click to view About Me',
-  'plant': 'Click to view Contact'
+  'plant': '???'
 };
 
 // UI Panel
@@ -1283,6 +1284,17 @@ function showInfoPanel(info, objectType = null) {
     infoPanel.style.transform = 'translate(-50%, -50%)';
     infoPanel.style.width = '95%';
     infoPanel.style.maxWidth = '900px';
+  } else if (viewType === 'books') {
+    // Use the Projects & Achievements component
+    createProjectsAchievementsPanel(infoContent);
+    
+    // Center the panel for projects and achievements
+    infoPanel.style.left = '50%';
+    infoPanel.style.right = 'auto';
+    infoPanel.style.top = '50%';
+    infoPanel.style.transform = 'translate(-50%, -50%)';
+    infoPanel.style.width = '95%';
+    infoPanel.style.maxWidth = '900px';
   } else {
     // Use simple text display for other objects
     infoTitle.textContent = `${info.icon} ${info.title}`;
@@ -1299,8 +1311,8 @@ function showInfoPanel(info, objectType = null) {
     infoPanel.style.maxWidth = '600px';
   }
   
-  // Hide title for About Me and Technical Skills (they have their own headers)
-  if (viewType === 'poster' || viewType === 'monitors') {
+  // Hide title for About Me, Technical Skills, and Projects & Achievements (they have their own headers)
+  if (viewType === 'poster' || viewType === 'monitors' || viewType === 'books') {
     infoTitle.style.display = 'none';
   } else {
     infoTitle.style.display = 'block';
@@ -1336,6 +1348,10 @@ function hideInfoPanel() {
   // Hide Technical Skills panel if it's active
   if (currentView === 'monitors') {
     hideTechnicalSkillsPanel(infoContent);
+  }
+  // Hide Projects & Achievements panel if it's active
+  if (currentView === 'books' || infoContent.querySelector('.projects-achievements-wrapper')) {
+    hideProjectsAchievementsPanel(infoContent);
   }
   
   gsap.to(infoPanel, {
