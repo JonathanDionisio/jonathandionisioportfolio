@@ -8,6 +8,26 @@ let darkModeToggle = null;
 let musicToggle = null;
 let navButtons = [];
 
+// Load background music
+let backgroundMusic = null;
+try {
+  const bgMusicUrl = new URL('../assets/audio/bgmusic.mp3', import.meta.url).href;
+  backgroundMusic = new Audio(bgMusicUrl);
+  backgroundMusic.volume = 0.3; // Set volume to 30% to avoid being too loud
+  backgroundMusic.loop = true; // Loop the music
+  backgroundMusic.preload = 'auto';
+} catch (e) {
+  console.warn('Could not load background music:', e);
+  try {
+    backgroundMusic = new Audio('/src/assets/audio/bgmusic.mp3');
+    backgroundMusic.volume = 0.3;
+    backgroundMusic.loop = true;
+    backgroundMusic.preload = 'auto';
+  } catch (e2) {
+    console.warn('Could not load background music from fallback path:', e2);
+  }
+}
+
 export function createNavigation() {
   // Create navigation bar
   navigationBar = document.createElement('nav');
@@ -72,6 +92,31 @@ export function createNavigation() {
     handleMusicToggle(isOn);
   });
   togglesContainer.appendChild(musicToggle);
+  
+  // Start playing background music since toggle starts as "on"
+  // Wait for audio to be ready and handle browser autoplay policies
+  if (backgroundMusic) {
+    // Try to play immediately
+    const tryPlayMusic = () => {
+      if (backgroundMusic && backgroundMusic.readyState >= 2) {
+        // Audio is loaded enough to play
+        backgroundMusic.play().catch(err => {
+          console.debug('Autoplay blocked, user interaction required:', err);
+          // This is normal - many browsers require user interaction before audio can play
+        });
+      } else if (backgroundMusic) {
+        // Wait for audio to load
+        backgroundMusic.addEventListener('canplay', () => {
+          backgroundMusic.play().catch(err => {
+            console.debug('Autoplay blocked, user interaction required:', err);
+          });
+        }, { once: true });
+      }
+    };
+    
+    // Try after a short delay to ensure DOM is ready
+    setTimeout(tryPlayMusic, 300);
+  }
   
   document.body.appendChild(togglesContainer);
   
@@ -247,19 +292,30 @@ function triggerNavigationAction(type) {
 }
 
 function handleDarkModeToggle(isOn) {
-  // Dark mode functionality
-  if (isOn) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
+  // Dark mode functionality - dispatch event to main.js
+  const event = new CustomEvent('darkModeToggle', { detail: { isOn } });
+  window.dispatchEvent(event);
   console.log('Dark mode:', isOn ? 'ON' : 'OFF');
 }
 
 function handleMusicToggle(isOn) {
   // Music toggle functionality
-  console.log('Music:', isOn ? 'ON' : 'OFF');
-  // You can add music control logic here
+  if (!backgroundMusic) {
+    console.warn('Background music not loaded');
+    return;
+  }
+  
+  if (isOn) {
+    // Play music in loop
+    backgroundMusic.play().catch(err => {
+      console.warn('Could not play background music:', err);
+    });
+    console.log('Music: ON');
+  } else {
+    // Pause music
+    backgroundMusic.pause();
+    console.log('Music: OFF');
+  }
 }
 
 export function setNavigationDisabled(isDisabled) {

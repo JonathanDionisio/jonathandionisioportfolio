@@ -379,6 +379,7 @@ function createRoom() {
   backWall.position.set(-roomSize / 2 + wallThickness + backWallWidth / 2, wallHeight / 2, -roomSize / 2 + wallThickness / 2);
   backWall.castShadow = true;
   backWall.receiveShadow = true;
+  backWall.userData.isHorizontal = false; // Vertical gradient for back wall
   roomGroup.add(backWall);
   
   // Left wall - thick wall with gradient
@@ -391,6 +392,7 @@ function createRoom() {
   leftWall.position.set(-roomSize / 2 + wallThickness / 2, wallHeight / 2, 0);
   leftWall.castShadow = true;
   leftWall.receiveShadow = true;
+  leftWall.userData.isHorizontal = true; // Horizontal gradient for left wall
   roomGroup.add(leftWall);
   
   // Only 2 walls now: back wall and left wall
@@ -1029,7 +1031,8 @@ function createFloorPlant() {
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hoveredObject = null;
-const introMessage = document.querySelector('.intro-message');
+// Intro message removed - no longer needed
+const introMessage = null;
 
 // Hint text element for hover hints
 const hintText = document.createElement('div');
@@ -1479,15 +1482,7 @@ function onMouseMove(event) {
 function onMouseClick(event) {
   if (isAnimating) return;
   
-  if (introMessage && introMessage.style.display !== 'none') {
-    gsap.to(introMessage, {
-      opacity: 0,
-      duration: 0.5,
-      onComplete: () => {
-        introMessage.style.display = 'none';
-      }
-    });
-  }
+  // Intro message removed - no longer needed
   
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -1582,6 +1577,457 @@ scene.background = createGradientTexture(0x2a3441, 0xe3f2fd, 'vertical'); // Dar
 const room = createRoom();
 scene.add(room);
 
+// Store references for dark mode
+let roomWalls = [];
+let currentDarkMode = false;
+
+// Store original wall materials for restoration
+let originalWallMaterials = new Map();
+
+// Store wall references for dark mode updates (excluding floor)
+function collectWallMeshes(group) {
+  group.traverse((child) => {
+    if (child.type === 'Mesh' && child.material && child.userData.isHorizontal !== undefined) {
+      // Only collect walls (they have isHorizontal property), not floor
+      roomWalls.push(child);
+      // Store original material for restoration
+      originalWallMaterials.set(child, {
+        isHorizontal: child.userData.isHorizontal,
+        verticalStart: child.userData.isHorizontal === false ? 0x2a3441 : null,
+        verticalEnd: child.userData.isHorizontal === false ? 0x90caf9 : null,
+        horizontalStart: child.userData.isHorizontal === true ? 0x1a2332 : null,
+        horizontalEnd: child.userData.isHorizontal === true ? 0xbbdefb : null
+      });
+    }
+  });
+}
+collectWallMeshes(room);
+
+// Helper function to convert hex number to RGB object for GSAP animation
+function hexToRgb(hex) {
+  if (typeof hex === 'string' && hex.startsWith('#')) {
+    hex = hex.substring(1);
+  }
+  if (typeof hex === 'number') {
+    hex = hex.toString(16).padStart(6, '0');
+  }
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '000000');
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+}
+
+// Helper function to convert RGB object to hex
+function rgbToHex(r, g, b) {
+  return `${[r, g, b].map(x => {
+    const hex = Math.round(x).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('')}`;
+}
+
+// Store current state for smooth transitions
+let currentBgStart = { r: 42, g: 52, b: 65 }; // Light mode default
+let currentBgEnd = { r: 227, g: 242, b: 253 };
+let currentWallMaterials = new Map();
+
+// Export function to toggle dark mode with smooth transitions
+export function toggleDarkMode(isDark) {
+  currentDarkMode = isDark;
+  
+  // Duration for all animations
+  const duration = 1.5; // Slightly longer for smoother feel
+  const ease = 'power2.inOut';
+  
+  // Create a master timeline to coordinate all animations
+  const masterTimeline = gsap.timeline();
+  
+  if (isDark) {
+    // Dark mode colors - lighter than before (not too dark)
+    const targetBgStart = hexToRgb(0x1a2535); // Lighter dark blue-gray
+    const targetBgEnd = hexToRgb(0x2d3a4a); // Medium dark blue-gray
+    
+    // Lighter dark wall materials
+    const darkWallVerticalStart = 0x1a2535;
+    const darkWallVerticalEnd = 0x2d3a4a;
+    const darkWallHorizontalStart = 0x152030;
+    const darkWallHorizontalEnd = 0x253545;
+    
+    // Background animation
+    const bgProxy = {
+      startR: currentBgStart.r,
+      startG: currentBgStart.g,
+      startB: currentBgStart.b,
+      endR: currentBgEnd.r,
+      endG: currentBgEnd.g,
+      endB: currentBgEnd.b
+    };
+    
+    masterTimeline.to(bgProxy, {
+      startR: targetBgStart.r,
+      startG: targetBgStart.g,
+      startB: targetBgStart.b,
+      endR: targetBgEnd.r,
+      endG: targetBgEnd.g,
+      endB: targetBgEnd.b,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        const startHex = parseInt(rgbToHex(bgProxy.startR, bgProxy.startG, bgProxy.startB), 16);
+        const endHex = parseInt(rgbToHex(bgProxy.endR, bgProxy.endG, bgProxy.endB), 16);
+        scene.background = createGradientTexture(startHex, endHex, 'vertical');
+        currentBgStart = { r: bgProxy.startR, g: bgProxy.startG, b: bgProxy.startB };
+        currentBgEnd = { r: bgProxy.endR, g: bgProxy.endG, b: bgProxy.endB };
+      }
+    }, 0); // Start at time 0
+    
+    // Wall materials - fade transition with better timing
+    roomWalls.forEach((wall, index) => {
+      if (wall.geometry && wall.material) {
+        let targetMaterial;
+        if (wall.userData.isHorizontal === true) {
+          targetMaterial = createGradientMaterial(darkWallHorizontalStart, darkWallHorizontalEnd, 'horizontal', true);
+        } else {
+          targetMaterial = createGradientMaterial(darkWallVerticalStart, darkWallVerticalEnd, 'vertical', true);
+        }
+        
+        // Ensure material properties are set correctly
+        targetMaterial.roughness = 0.6;
+        targetMaterial.metalness = 0.1;
+        targetMaterial.side = THREE.DoubleSide;
+        
+        // Store old material for disposal
+        const oldMaterial = wall.material;
+        
+        // Get current opacity from old material
+        const currentOpacity = oldMaterial.opacity !== undefined ? oldMaterial.opacity : 1;
+        
+        // Set new material - make it visible immediately but match current opacity
+        targetMaterial.transparent = true;
+        targetMaterial.opacity = currentOpacity;
+        wall.material = targetMaterial;
+        
+        // Fade from current opacity to fully opaque
+        masterTimeline.fromTo(targetMaterial,
+          { opacity: currentOpacity },
+          {
+            opacity: 1,
+            duration: duration * 0.8,
+            ease: ease,
+            onComplete: () => {
+              // Ensure material is fully opaque and non-transparent after transition
+              targetMaterial.opacity = 1;
+              targetMaterial.transparent = false;
+              // Force material update
+              targetMaterial.needsUpdate = true;
+              // Ensure texture is properly updated
+              if (targetMaterial.map) {
+                targetMaterial.map.needsUpdate = true;
+              }
+              // Clean up old material
+              if (oldMaterial && oldMaterial !== targetMaterial) {
+                // Dispose old material and its textures
+                if (oldMaterial.map) oldMaterial.map.dispose();
+                oldMaterial.dispose();
+              }
+            }
+          }, 
+          index * 0.05); // Small stagger
+      }
+    });
+    
+    // Lights - all synchronized (get current values from actual lights)
+    const hemisphereCurrentColor = hemisphereLight.color;
+    const hemisphereCurrentGround = hemisphereLight.groundColor;
+    const hemisphereProxy = { 
+      r: hemisphereCurrentColor.r * 255, 
+      g: hemisphereCurrentColor.g * 255, 
+      b: hemisphereCurrentColor.b * 255, 
+      groundR: hemisphereCurrentGround.r * 255, 
+      groundG: hemisphereCurrentGround.g * 255, 
+      groundB: hemisphereCurrentGround.b * 255, 
+      intensity: hemisphereLight.intensity
+    };
+    
+    masterTimeline.to(hemisphereProxy, {
+      r: 60,
+      g: 60,
+      b: 90,
+      groundR: 21,
+      groundG: 32,
+      groundB: 48,
+      intensity: 0.6,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        hemisphereLight.color.setRGB(hemisphereProxy.r / 255, hemisphereProxy.g / 255, hemisphereProxy.b / 255);
+        hemisphereLight.groundColor.setRGB(hemisphereProxy.groundR / 255, hemisphereProxy.groundG / 255, hemisphereProxy.groundB / 255);
+        hemisphereLight.intensity = hemisphereProxy.intensity;
+      }
+    }, 0);
+    
+    const mainLightCurrentColor = mainLight.color;
+    const mainLightProxy = { 
+      r: mainLightCurrentColor.r * 255, 
+      g: mainLightCurrentColor.g * 255, 
+      b: mainLightCurrentColor.b * 255, 
+      intensity: mainLight.intensity
+    };
+    masterTimeline.to(mainLightProxy, {
+      r: 100,
+      g: 110,
+      b: 150,
+      intensity: 0.7,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        mainLight.color.setRGB(mainLightProxy.r / 255, mainLightProxy.g / 255, mainLightProxy.b / 255);
+        mainLight.intensity = mainLightProxy.intensity;
+      }
+    }, 0);
+    
+    const fillLightCurrentColor = fillLight.color;
+    const fillLightProxy = { 
+      r: fillLightCurrentColor.r * 255, 
+      g: fillLightCurrentColor.g * 255, 
+      b: fillLightCurrentColor.b * 255, 
+      intensity: fillLight.intensity
+    };
+    masterTimeline.to(fillLightProxy, {
+      r: 80,
+      g: 90,
+      b: 130,
+      intensity: 0.4,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        fillLight.color.setRGB(fillLightProxy.r / 255, fillLightProxy.g / 255, fillLightProxy.b / 255);
+        fillLight.intensity = fillLightProxy.intensity;
+      }
+    }, 0);
+    
+    const centerLightCurrentColor = centerLight.color;
+    const centerLightProxy = { 
+      r: centerLightCurrentColor.r * 255, 
+      g: centerLightCurrentColor.g * 255, 
+      b: centerLightCurrentColor.b * 255, 
+      intensity: centerLight.intensity
+    };
+    masterTimeline.to(centerLightProxy, {
+      r: 70,
+      g: 80,
+      b: 120,
+      intensity: 0.4,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        centerLight.color.setRGB(centerLightProxy.r / 255, centerLightProxy.g / 255, centerLightProxy.b / 255);
+        centerLight.intensity = centerLightProxy.intensity;
+      }
+    }, 0);
+    
+    // Body class transition - add at start
+    masterTimeline.call(() => {
+      document.body.classList.add('dark-mode');
+    }, null, 0); // Add at start for immediate effect
+  } else {
+    // Light mode colors (default)
+    const targetBgStart = { r: 42, g: 52, b: 65 }; // 0x2a3441
+    const targetBgEnd = { r: 227, g: 242, b: 253 }; // 0xe3f2fd
+    
+    // Background animation back to light
+    const bgProxy = {
+      startR: currentBgStart.r,
+      startG: currentBgStart.g,
+      startB: currentBgStart.b,
+      endR: currentBgEnd.r,
+      endG: currentBgEnd.g,
+      endB: currentBgEnd.b
+    };
+    
+    masterTimeline.to(bgProxy, {
+      startR: targetBgStart.r,
+      startG: targetBgStart.g,
+      startB: targetBgStart.b,
+      endR: targetBgEnd.r,
+      endG: targetBgEnd.g,
+      endB: targetBgEnd.b,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        const startHex = parseInt(rgbToHex(bgProxy.startR, bgProxy.startG, bgProxy.startB), 16);
+        const endHex = parseInt(rgbToHex(bgProxy.endR, bgProxy.endG, bgProxy.endB), 16);
+        scene.background = createGradientTexture(startHex, endHex, 'vertical');
+        currentBgStart = { r: bgProxy.startR, g: bgProxy.startG, b: bgProxy.startB };
+        currentBgEnd = { r: bgProxy.endR, g: bgProxy.endG, b: bgProxy.endB };
+      }
+    }, 0);
+    
+    // Wall materials back to light - restore original materials exactly
+    roomWalls.forEach((wall, index) => {
+      if (wall.geometry && wall.material) {
+        const wallInfo = originalWallMaterials.get(wall);
+        if (!wallInfo) return;
+        
+        let targetMaterial;
+        if (wall.userData.isHorizontal === true) {
+          targetMaterial = createGradientMaterial(0x1a2332, 0xbbdefb, 'horizontal', true);
+        } else {
+          targetMaterial = createGradientMaterial(0x2a3441, 0x90caf9, 'vertical', true);
+        }
+        
+        // Ensure material properties match original exactly
+        targetMaterial.roughness = 0.6;
+        targetMaterial.metalness = 0.1;
+        targetMaterial.side = THREE.DoubleSide;
+        
+        // Store old material for disposal
+        const oldMaterial = wall.material;
+        
+        // Get current opacity from old material
+        const currentOpacity = oldMaterial.opacity !== undefined ? oldMaterial.opacity : 1;
+        
+        // Set new material - make it visible immediately but match current opacity
+        targetMaterial.transparent = true;
+        targetMaterial.opacity = currentOpacity;
+        wall.material = targetMaterial;
+        
+        // Fade from current opacity to fully opaque
+        masterTimeline.fromTo(targetMaterial, 
+          { opacity: currentOpacity },
+          {
+            opacity: 1,
+            duration: duration * 0.8,
+            ease: ease,
+            onComplete: () => {
+              // Ensure material is fully opaque and non-transparent after transition
+              targetMaterial.opacity = 1;
+              targetMaterial.transparent = false;
+              // Force material update
+              targetMaterial.needsUpdate = true;
+              // Ensure texture is properly updated
+              if (targetMaterial.map) {
+                targetMaterial.map.needsUpdate = true;
+              }
+              // Clean up old material
+              if (oldMaterial && oldMaterial !== targetMaterial) {
+                // Dispose old material and its textures
+                if (oldMaterial.map) oldMaterial.map.dispose();
+                oldMaterial.dispose();
+              }
+            }
+          }, 
+          index * 0.05); // Small stagger
+      }
+    });
+    
+    // Lights back to original - all synchronized (get current values from actual lights)
+    const hemisphereCurrentColor = hemisphereLight.color;
+    const hemisphereCurrentGround = hemisphereLight.groundColor;
+    const hemisphereProxy = { 
+      r: hemisphereCurrentColor.r * 255, 
+      g: hemisphereCurrentColor.g * 255, 
+      b: hemisphereCurrentColor.b * 255, 
+      groundR: hemisphereCurrentGround.r * 255, 
+      groundG: hemisphereCurrentGround.g * 255, 
+      groundB: hemisphereCurrentGround.b * 255, 
+      intensity: hemisphereLight.intensity
+    };
+    
+    masterTimeline.to(hemisphereProxy, {
+      r: 255,
+      g: 255,
+      b: 255,
+      groundR: 42,
+      groundG: 52,
+      groundB: 65,
+      intensity: 0.8,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        hemisphereLight.color.setRGB(hemisphereProxy.r / 255, hemisphereProxy.g / 255, hemisphereProxy.b / 255);
+        hemisphereLight.groundColor.setRGB(hemisphereProxy.groundR / 255, hemisphereProxy.groundG / 255, hemisphereProxy.groundB / 255);
+        hemisphereLight.intensity = hemisphereProxy.intensity;
+      }
+    }, 0);
+    
+    const mainLightCurrentColor2 = mainLight.color;
+    const mainLightProxy2 = { 
+      r: mainLightCurrentColor2.r * 255, 
+      g: mainLightCurrentColor2.g * 255, 
+      b: mainLightCurrentColor2.b * 255, 
+      intensity: mainLight.intensity
+    };
+    masterTimeline.to(mainLightProxy2, {
+      r: 255,
+      g: 255,
+      b: 255,
+      intensity: 1.0,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        mainLight.color.setRGB(mainLightProxy2.r / 255, mainLightProxy2.g / 255, mainLightProxy2.b / 255);
+        mainLight.intensity = mainLightProxy2.intensity;
+      }
+    }, 0);
+    
+    const fillLightCurrentColor2 = fillLight.color;
+    const fillLightProxy2 = { 
+      r: fillLightCurrentColor2.r * 255, 
+      g: fillLightCurrentColor2.g * 255, 
+      b: fillLightCurrentColor2.b * 255, 
+      intensity: fillLight.intensity
+    };
+    masterTimeline.to(fillLightProxy2, {
+      r: 255,
+      g: 255,
+      b: 255,
+      intensity: 0.5,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        fillLight.color.setRGB(fillLightProxy2.r / 255, fillLightProxy2.g / 255, fillLightProxy2.b / 255);
+        fillLight.intensity = fillLightProxy2.intensity;
+      }
+    }, 0);
+    
+    const centerLightCurrentColor2 = centerLight.color;
+    const centerLightProxy2 = { 
+      r: centerLightCurrentColor2.r * 255, 
+      g: centerLightCurrentColor2.g * 255, 
+      b: centerLightCurrentColor2.b * 255, 
+      intensity: centerLight.intensity
+    };
+    masterTimeline.to(centerLightProxy2, {
+      r: 255,
+      g: 255,
+      b: 255,
+      intensity: 0.6,
+      duration: duration,
+      ease: ease,
+      onUpdate: () => {
+        centerLight.color.setRGB(centerLightProxy.r / 255, centerLightProxy.g / 255, centerLightProxy.b / 255);
+        centerLight.intensity = centerLightProxy.intensity;
+      }
+    }, 0);
+    
+    // Body class transition - remove immediately before animations start
+    // This allows CSS transitions to work properly
+    document.body.classList.remove('dark-mode');
+    
+    // Also ensure it's removed after a small delay to catch any timing issues
+    masterTimeline.call(() => {
+      document.body.classList.remove('dark-mode');
+    }, null, 0.1);
+  }
+}
+
+// Listen for dark mode toggle events (after function is defined)
+window.addEventListener('darkModeToggle', (event) => {
+  toggleDarkMode(event.detail.isOn);
+});
+
 const desk = createDesk();
 scene.add(desk);
 
@@ -1612,17 +2058,7 @@ scene.add(wallArt);
 const floorPlant = createFloorPlant();
 scene.add(floorPlant);
 
-// Hide intro message after delay
-if (introMessage) {
-  gsap.to(introMessage, {
-    opacity: 0,
-    duration: 1,
-    delay: 4,
-    onComplete: () => {
-      introMessage.style.display = 'none';
-    }
-  });
-}
+// Intro message removed - no longer needed
 
 // Animation loop
 function animate() {

@@ -553,7 +553,7 @@ function createAchievementsSection() {
       title: 'Deans Lister',
       description: 'Maintained a GPA of 3.75 or higher for multiple semesters.',
       icon: '🎓',
-      year: '2023-2024'
+      year: 'National University Manila | 2023-2024'
     },
   ];
   
