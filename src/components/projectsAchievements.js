@@ -7,22 +7,14 @@ import { gsap } from 'gsap';
 // Store carousel intervals for cleanup
 let carouselIntervals = [];
 
-// Load hover sound effect
+// Load hover sound effect (served from public/)
 let hoverSound = null;
 try {
-  const hoverSoundUrl = new URL('../assets/audio/cubehover.mp3', import.meta.url).href;
-  hoverSound = new Audio(hoverSoundUrl);
+  hoverSound = new Audio('/audio/cubehover.mp3');
   hoverSound.volume = 0.3;
   hoverSound.preload = 'auto';
 } catch (e) {
-  console.warn('Could not load cube hover sound:', e);
-  try {
-    hoverSound = new Audio('/src/assets/audio/cubehover.mp3');
-    hoverSound.volume = 0.3;
-    hoverSound.preload = 'auto';
-  } catch (e2) {
-    console.warn('Could not load cube hover sound from fallback path:', e2);
-  }
+  console.warn('Could not initialize hover sound:', e);
 }
 
 // Function to play hover sound
@@ -160,15 +152,15 @@ function getWebProjectsData() {
       name: 'Portfolio Website',
       description: 'My first portfolio website showcasing my projects and achievements. I was able to test my skills in web development and design by creating this portfolio site using React, Node.js, and Three.js for 3D graphics. The portfolio dont have much projects and achievements yet since I am still a student and just started my journey in web development. But I will update it regularly as I complete more projects and achieve more milestones in my career.',
       images: [
-        'portfolio1.png',
-        'portfolio2.png',
-        'portfolio3.png',
-        'portfolio4.png',
-        'portfolio5.png',
+        'portfolio1.PNG',
+        'portfolio2.PNG',
+        'portfolio3.PNG',
+        'portfolio4.PNG',
+        'portfolio5.PNG',
     
       ],
       technologies: ['React', 'Node.js', 'Three.js', 'GSAP'],
-      website: null // Add your website URL here if available
+      website: 'https://jonathandionisio.vercel.app/'
     }
     
   ];
@@ -206,18 +198,9 @@ function createProjectSummaryCard(project, projectId, type) {
   card.dataset.projectId = projectId;
   
   // Get first image for preview
-  let previewImageUrl = '';
-  try {
-    const basePath = type === 'mobile-projects' 
-      ? '../assets/images/mobileprojects/' 
-      : '../assets/images/webprojects/';
-    previewImageUrl = new URL(basePath + project.images[0], import.meta.url).href;
-  } catch (e) {
-    const fallbackPath = type === 'mobile-projects'
-      ? `/src/assets/images/mobileprojects/${project.images[0]}`
-      : `/src/assets/images/webprojects/${project.images[0]}`;
-    previewImageUrl = fallbackPath;
-  }
+  const previewImageUrl = (type === 'mobile-projects')
+    ? `/images/mobileprojects/${project.images[0]}`
+    : `/images/webprojects/${project.images[0]}`;
   
   // Card Image Preview
   const cardImage = document.createElement('div');
@@ -385,19 +368,11 @@ function createProjectCarousel(project, carouselId, type, onBackCallback) {
   
   // Generate image URLs and create cards
   let currentIndex = 0;
-  const imageUrls = project.images.map(imgName => {
-    try {
-      const basePath = type === 'mobile-projects' 
-        ? '../assets/images/mobileprojects/' 
-        : '../assets/images/webprojects/';
-      return new URL(basePath + imgName, import.meta.url).href;
-    } catch (e) {
-      const fallbackPath = type === 'mobile-projects'
-        ? `/src/assets/images/mobileprojects/${imgName}`
-        : `/src/assets/images/webprojects/${imgName}`;
-      return fallbackPath;
-    }
-  });
+  const imageUrls = project.images.map(imgName => (
+    type === 'mobile-projects'
+      ? `/images/mobileprojects/${imgName}`
+      : `/images/webprojects/${imgName}`
+  ));
   
   imageUrls.forEach((imageUrl, index) => {
     const card = createCarouselCard(project, imageUrl, index);

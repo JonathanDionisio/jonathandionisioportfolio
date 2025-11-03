@@ -17,26 +17,16 @@ const CAT_SCALE = 2.7; // Increased scale factor for the cat model
 const FLOOR_Y = 0.05; // Floor top surface Y position (floorThickness / 2)
 const CAT_HEIGHT_OFFSET = 0.0; // Cat will be positioned at floor level, offset calculated from bounding box
 
-// Load cat audio
+// Load cat audio (served from public/)
 try {
-  const catAudioUrl = new URL('../assets/audio/cataudio.mp3', import.meta.url).href;
-  catAudio = new Audio(catAudioUrl);
+  catAudio = new Audio('/audio/cataudio.mp3');
   catAudio.volume = 0.5;
   catAudio.preload = 'auto';
-  catAudio.load(); // Force load the audio
-  console.log('Cat audio loaded from:', catAudioUrl);
+  catAudio.load();
+  console.log('Cat audio loaded from public path');
 } catch (e) {
-  console.warn('Could not load cat audio:', e);
-  try {
-    catAudio = new Audio('/src/assets/audio/cataudio.mp3');
-    catAudio.volume = 0.5;
-    catAudio.preload = 'auto';
-    catAudio.load(); // Force load the audio
-    console.log('Cat audio loaded from fallback path');
-  } catch (e2) {
-    console.warn('Could not load cat audio from fallback path:', e2);
-    catAudio = null;
-  }
+  console.warn('Could not load cat audio from public path:', e);
+  catAudio = null;
 }
 
 // Load the cat 3D model
@@ -44,12 +34,8 @@ async function loadCatModel() {
   return new Promise((resolve, reject) => {
     const loader = new GLTFLoader();
     
-    let modelPath;
-    try {
-      modelPath = new URL('../assets/3dmodels/cat/scene.gltf', import.meta.url).href;
-    } catch (e) {
-      modelPath = '/src/assets/3dmodels/cat/scene.gltf';
-    }
+    // GLTF served from public/ so relative references to textures/bin resolve
+    const modelPath = '/3dmodels/cat/scene.gltf';
     
     loader.load(
       modelPath,
