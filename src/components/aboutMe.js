@@ -122,23 +122,23 @@ export function createAboutMePanel(panelContainer) {
   // Goals with descriptions
   const goals = [
     { 
-      text: ' Apply and strengthen my technical skills through real-world projects and professional experience',
-      description: 'Seeking hands-on experience to apply classroom knowledge and learn industry best practices.'
+      text: ' Gain hands-on experience through real-world projects',
+      description: 'Apply my technical knowledge in a professional environment while gaining practical experience and contributing to meaningful projects.'
     },
     { 
-      text: 'Build my career in software development, IT support, and the game industry while continuing to learn new technologies',
-      description: 'Expand expertise in creating engaging games and mobile applications using cutting-edge technologies.'
+      text: 'Build a career in software, IT, and the game industry',
+      description: 'Build a career in software, IT, and the game industryPursue opportunities in software development, IT support, game development, and game testing while developing the skills needed for a growing career in technology.'
     },
     { 
-      text: ' Gain diverse industry experience and continuously improve my skills as a technology professional',
-      description: 'Build a diverse portfolio showcasing various projects and experiences to advance my career.'
+      text: ' Learn, adapt, and continuously improve my skills',
+      description: 'Stay curious and adaptable by learning new technologies, taking on new challenges, and continuously improving my technical and professional skills.'
     }
   ];
   
   goals.forEach(goal => {
     const goalItem = document.createElement('li');
     goalItem.className = 'goal-item';
-    goalItem.innerHTML = `<span class="goal-icon">🎯</span> ${goal.text}`;
+    goalItem.innerHTML = `<span class="goal-icon"></span> ${goal.text}`;
     goalItem.dataset.description = goal.description;
     
     // Add hover functionality
@@ -187,7 +187,7 @@ export function createAboutMePanel(panelContainer) {
 
   
   const buttonText = document.createElement('span');
-  buttonText.textContent = 'Download CV';
+  buttonText.textContent = 'Download Resume';
   
   
  
@@ -369,13 +369,18 @@ function createEducationSlideshow() {
       level: 'PHINMA-Saint Jude College Manila',
       program: 'Technical-Vocational-Livelihood Information and Communication Technology',
       period: 'June 2020 - August 2022',
-      images: []
+      images: [],
+      achievements: ['High Honors 2022']
     },
     {
       level: 'National University Manila',
       program: 'Bachelor of Science in Information Technology (Mobile and Web Applications)',
       period: 'August 2022 - September 2026',
-      images: []
+      images: [],
+      achievements: [
+        'Cum Laude 2026',
+        'Dean\'s Lister 2022 - 2024'
+      ]
     }
   ];
   
@@ -460,11 +465,49 @@ function createEducationSlideshow() {
     // Content
     const content = document.createElement('div');
     content.className = 'education-content';
+    
     content.innerHTML = `
       <h2 class="education-level">${edu.level}</h2>
       <p class="education-program">${edu.program}</p>
-      <span class="education-period">${edu.period}</span>
     `;
+    
+    // Achievements scrolling ticker (below level and program, above period)
+    if (edu.achievements && edu.achievements.length > 0) {
+      const achievementsContainer = document.createElement('div');
+      achievementsContainer.className = 'education-achievements-ticker';
+      
+      const achievementsTrack = document.createElement('div');
+      achievementsTrack.className = 'achievements-track';
+      
+      // Create achievements with duplicates for seamless looping
+      const achievementsBadges = edu.achievements.map(achievement => {
+        const badge = document.createElement('span');
+        badge.className = 'achievement-badge';
+        badge.textContent = `🏆 ${achievement}`;
+        return badge;
+      });
+      
+      // Add original badges
+      achievementsBadges.forEach(badge => {
+        const clone = badge.cloneNode(true);
+        achievementsTrack.appendChild(clone);
+      });
+      
+      // Add duplicates for seamless loop
+      achievementsBadges.forEach(badge => {
+        const clone = badge.cloneNode(true);
+        achievementsTrack.appendChild(clone);
+      });
+      
+      achievementsContainer.appendChild(achievementsTrack);
+      content.appendChild(achievementsContainer);
+    }
+    
+    // Add period at the end
+    const periodSpan = document.createElement('span');
+    periodSpan.className = 'education-period';
+    periodSpan.textContent = edu.period;
+    content.appendChild(periodSpan);
     
     eduItem.appendChild(slideshow);
     eduItem.appendChild(content);

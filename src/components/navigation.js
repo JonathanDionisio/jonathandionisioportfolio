@@ -59,7 +59,7 @@ export function createNavigation() {
   navButtonsContainer.appendChild(aboutMeBtn);
   
   // Projects & Achievements button
-  const projectsBtn = createNavButton('PROJECTS &<br>ACHIEVEMENTS', 'books', () => {
+  const projectsBtn = createNavButton('PROJECTS &<br>CERTIFICATIONS', 'books', () => {
     triggerNavigationAction('books');
   });
   navButtonsContainer.appendChild(projectsBtn);

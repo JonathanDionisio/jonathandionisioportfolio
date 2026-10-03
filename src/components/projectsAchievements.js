@@ -45,7 +45,7 @@ export function createProjectsAchievementsPanel(panelContainer) {
   const header = document.createElement('div');
   header.className = 'projects-header';
   header.innerHTML = `
-    <h2 class="projects-title">Projects & Achievements</h2>
+    <h2 class="projects-title">Projects & Certifications </h2>
   `;
   wrapper.appendChild(header);
   
@@ -65,9 +65,17 @@ export function createProjectsAchievementsPanel(panelContainer) {
   );
   wrapper.appendChild(webProjectsSection);
   
-  // Achievements Section (not carousel)
-  const achievementsSection = createAchievementsSection();
-  wrapper.appendChild(achievementsSection);
+  // Game Projects Section - Show cards first
+  const gameProjectsSection = createProjectsSection(
+    'Game Projects',
+    'game-projects',
+    getGameProjectsData()
+  );
+  wrapper.appendChild(gameProjectsSection);
+  
+  // Certifications Section (not carousel)
+  const certificationsSection = createCertificationsSection();
+  wrapper.appendChild(certificationsSection);
   
   // Append wrapper to panel
   panelContainer.appendChild(wrapper);
@@ -166,6 +174,25 @@ function getWebProjectsData() {
   ];
 }
 
+function getGameProjectsData() {
+  return [
+    {
+      name: 'Memento Amori: Summer Fair',
+      description: 'Memento Amori: Summer Fair is a romantic visual novel woven with love, loss, and the fragile threads of memory. Once bound by a promise, two lovers chose to erase each other from their hearts after a tragic accident and a painful farewell. Now strangers beneath the glow of a summer fair, they meet again, unaware of the love they left behind. Yet with every shared smile and fleeting moment, forgotten memories begin to bloom like fireworks across the night sky. As the past slowly returns, they must face a choice: hold onto the memories that once separate them, or let each other fade into oblivion once more. But if love is written by fate, can even forgotten hearts truly stay apart?',
+      images: [
+        'memento1.png',
+         'memento2.png',
+          'memento3.png',
+           'memento4.png'
+        // Add your game project images here
+        // Example: 'gameproject1.png', 'gameproject2.png'
+      ],
+      technologies: ['Unity', 'C#', 'Visual Novel'],
+      website: 'https://togebisu.itch.io/memento-amori-summer-fair' // Add your game link if available
+    }
+  ];
+}
+
 function createProjectsSection(title, className, projects) {
   const section = document.createElement('div');
   section.className = `projects-section ${className}-section`;
@@ -198,26 +225,38 @@ function createProjectSummaryCard(project, projectId, type) {
   card.dataset.projectId = projectId;
   
   // Get first image for preview
-  const previewImageUrl = (type === 'mobile-projects')
-    ? `/images/mobileprojects/${project.images[0]}`
-    : `/images/webprojects/${project.images[0]}`;
+  let previewImageUrl;
+  if (type === 'mobile-projects') {
+    previewImageUrl = `/images/mobileprojects/${project.images[0]}`;
+  } else if (type === 'web-projects') {
+    previewImageUrl = `/images/webprojects/${project.images[0]}`;
+  } else if (type === 'game-projects') {
+    previewImageUrl = project.images.length > 0 ? `/images/gameprojects/${project.images[0]}` : null;
+  }
   
   // Card Image Preview
   const cardImage = document.createElement('div');
   cardImage.className = 'project-summary-image';
   
-  const img = document.createElement('img');
-  img.src = previewImageUrl;
-  img.alt = `${project.name} - Preview`;
-  img.onerror = function() {
-    this.style.display = 'none';
+  if (previewImageUrl) {
+    const img = document.createElement('img');
+    img.src = previewImageUrl;
+    img.alt = `${project.name} - Preview`;
+    img.onerror = function() {
+      this.style.display = 'none';
+      const placeholder = document.createElement('div');
+      placeholder.className = 'image-placeholder';
+      placeholder.textContent = project.name.charAt(0);
+      cardImage.appendChild(placeholder);
+    };
+    
+    cardImage.appendChild(img);
+  } else {
     const placeholder = document.createElement('div');
     placeholder.className = 'image-placeholder';
     placeholder.textContent = project.name.charAt(0);
     cardImage.appendChild(placeholder);
-  };
-  
-  cardImage.appendChild(img);
+  }
   
   // Card Info
   const cardInfo = document.createElement('div');
@@ -368,11 +407,15 @@ function createProjectCarousel(project, carouselId, type, onBackCallback) {
   
   // Generate image URLs and create cards
   let currentIndex = 0;
-  const imageUrls = project.images.map(imgName => (
-    type === 'mobile-projects'
-      ? `/images/mobileprojects/${imgName}`
-      : `/images/webprojects/${imgName}`
-  ));
+  const imageUrls = project.images.map(imgName => {
+    if (type === 'mobile-projects') {
+      return `/images/mobileprojects/${imgName}`;
+    } else if (type === 'web-projects') {
+      return `/images/webprojects/${imgName}`;
+    } else if (type === 'game-projects') {
+      return `/images/gameprojects/${imgName}`;
+    }
+  });
   
   imageUrls.forEach((imageUrl, index) => {
     const card = createCarouselCard(project, imageUrl, index);
@@ -525,61 +568,85 @@ function updatePaginationDots(container, activeIndex, total) {
   });
 }
 
-function createAchievementsSection() {
+function createCertificationsSection() {
   const section = document.createElement('div');
-  section.className = 'achievements-section';
+  section.className = 'certifications-section';
   
   const sectionTitle = document.createElement('h3');
-  sectionTitle.className = 'achievements-title';
-  sectionTitle.textContent = 'Achievements';
+  sectionTitle.className = 'certifications-title';
+  sectionTitle.textContent = 'Certifications';
   section.appendChild(sectionTitle);
   
-  const achievementsGrid = document.createElement('div');
-  achievementsGrid.className = 'achievements-grid';
+  const certificationsGrid = document.createElement('div');
+  certificationsGrid.className = 'certifications-grid';
   
-  // Achievement data - you can customize this
-  const achievements = [
+  // Certification data - you can customize this
+  const certifications = [
     {
-      title: 'Deans Lister',
-      description: 'Maintained a GPA of 3.75 or higher for multiple semesters.',
-      icon: '🎓',
-      year: 'National University Manila | 2023-2024'
+      title: 'Skills to Succeed Academy (Accenture)',
+      description: 'Certificate of achievement for successfully accomplishing 61 learning modules',
+      year: 'National University Manila | 2025'
+    },
+
+        {
+      title: 'Google Network Architecture (Coursera)',
+      description: 'An Online courses authorized by Google and offered through Coursera ',
+      year: 'National University Manila | 2026'
+    },
+
+        {
+      title: 'Labor Laws and Tax Essentials',
+      description: 'Certificate of Completion Labor Laws and Tax Essentials for Young Professionals: AIPO Clearance Webinars',
+      year: 'National University Manila | 2026'
+    },
+
+        {
+      title: 'Unity C# Mobile Game Development',
+      description: 'Certificate of Completion: Unity C# Mobile Game Development: Make 3 Games from scratch ',
+      year: 'Unity 2026'
+    },
+
+        {
+      title: 'Unity 2.5D Turn-Based RPG',
+      description: 'Certificate of Completion:Unity 2.5D Turn-Based RPG: Build Your Own Turn-Based Battles & Environments ',
+      year: 'Unity 2026'
+    },
+
+        {
+      title: 'Data Privacy Orientation',
+      description: 'Data Privacy Orientation',
+      year: 'National University Manila | 2924'
     },
   ];
   
-  achievements.forEach((achievement, index) => {
-    const achievementCard = document.createElement('div');
-    achievementCard.className = 'achievement-card';
-    
-    const icon = document.createElement('div');
-    icon.className = 'achievement-icon';
-    icon.textContent = achievement.icon;
+  certifications.forEach((certification, index) => {
+    const certificationCard = document.createElement('div');
+    certificationCard.className = 'certification-card';
     
     const content = document.createElement('div');
-    content.className = 'achievement-content';
+    content.className = 'certification-content';
     
     const title = document.createElement('h4');
-    title.className = 'achievement-title';
-    title.textContent = achievement.title;
+    title.className = 'certification-title';
+    title.textContent = certification.title;
     
     const description = document.createElement('p');
-    description.className = 'achievement-description';
-    description.textContent = achievement.description;
+    description.className = 'certification-description';
+    description.textContent = certification.description;
     
     const year = document.createElement('span');
-    year.className = 'achievement-year';
-    year.textContent = achievement.year;
+    year.className = 'certification-year';
+    year.textContent = certification.year;
     
     content.appendChild(title);
     content.appendChild(description);
     content.appendChild(year);
     
-    achievementCard.appendChild(icon);
-    achievementCard.appendChild(content);
+    certificationCard.appendChild(content);
     
     // Animate on load
-    gsap.set(achievementCard, { opacity: 0, y: 20 });
-    gsap.to(achievementCard, {
+    gsap.set(certificationCard, { opacity: 0, y: 20 });
+    gsap.to(certificationCard, {
       opacity: 1,
       y: 0,
       duration: 0.6,
@@ -587,10 +654,10 @@ function createAchievementsSection() {
       ease: 'power2.out'
     });
     
-    achievementsGrid.appendChild(achievementCard);
+    certificationsGrid.appendChild(certificationCard);
   });
   
-  section.appendChild(achievementsGrid);
+  section.appendChild(certificationsGrid);
   return section;
 }
 
@@ -648,7 +715,7 @@ function openImageZoom(imageSrc) {
 }
 
 function animateSections(wrapper) {
-  const sections = wrapper.querySelectorAll('.projects-section, .achievements-section');
+  const sections = wrapper.querySelectorAll('.projects-section, .certifications-section');
   
   sections.forEach((section, index) => {
     gsap.set(section, { opacity: 0, y: 30 });
