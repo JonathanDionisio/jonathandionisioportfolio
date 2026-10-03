@@ -424,8 +424,7 @@
 }
 
 .achievement-card {
-  display: flex;
-  gap: 15px;
+  display: block;
   padding: 20px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
@@ -442,20 +441,10 @@
 }
 
 .achievement-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(74, 158, 255, 0.2), rgba(100, 181, 246, 0.2));
-  border-radius: 12px;
-  border: 1px solid rgba(74, 158, 255, 0.3);
+  display: none;
 }
 
 .achievement-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -476,6 +465,51 @@
 }
 
 .achievement-year {
+  font-size: 0.85rem;
+  color: rgba(74, 158, 255, 0.8);
+  font-weight: 500;
+  margin-top: auto;
+}
+
+/* Certification Card Styles (same as achievement but without icon) */
+.certification-card {
+  display: block;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.certification-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(74, 158, 255, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(74, 158, 255, 0.2);
+}
+
+.certification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.certification-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+.certification-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.certification-year {
   font-size: 0.85rem;
   color: rgba(74, 158, 255, 0.8);
   font-weight: 500;
