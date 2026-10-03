@@ -28,7 +28,7 @@ export function createAboutMePanel(panelContainer) {
   const introSection = createSection('Introduction', 'intro-section');
   const introContent = document.createElement('p');
   introContent.className = 'intro-text';
-  introContent.textContent = "Motivated IT student seeking an internship position as a developer specializing in game or mobile application development. Eager to apply and enhance my programming skills while learning from experienced professionals and contributing to real-world creative projects.";
+  introContent.textContent = "I am a BSIT-MWA graduate and a passionate game enthusiast with a strong interest in technology, software development, and interactive applications. I am seeking opportunities in software development, IT support, and the game industry, including roles in game development and game testing. I am eager to apply my technical knowledge, continue developing my skills, and gain hands-on experience while contributing to real-world projects. I am open to both full-time and internship opportunities and am always willing to learn, adapt, and take on new challenges.";
   introSection.appendChild(introContent);
   wrapper.appendChild(introSection);
   
@@ -68,11 +68,19 @@ export function createAboutMePanel(panelContainer) {
   educationSection.appendChild(educationSlideshow);
   wrapper.appendChild(educationSection);
   
+  // Experience Section with Slideshow
+  const experienceSection = createSection('Experience', 'experience-section');
+  
+  // Create experience slideshow
+  const experienceSlideshow = createExperienceSlideshow();
+  experienceSection.appendChild(experienceSlideshow);
+  wrapper.appendChild(experienceSection);
+  
   // Objective Section
   const objectiveSection = createSection('Objective', 'objective-section');
   const objectiveText = document.createElement('p');
   objectiveText.className = 'objective-text';
-  objectiveText.textContent = "To develop and expand my technical skills through hands-on experience in real-world environments, while nurturing my passion for game and mobile development. I aim to gain diverse work experiences that will strengthen my resume and portfolio, ultimately preparing me for a career in a field I am truly passionate about.";
+  objectiveText.textContent = "To apply and further develop my technical skills through hands-on experience in a professional environment. As a BSIT-MWA graduate and game enthusiast, I aim to build a career in software development, IT support, or the game industry while continuously learning and adapting to new technologies. I seek opportunities where I can contribute to real-world projects, gain valuable industry experience, and grow both professionally and personally.";
   objectiveSection.appendChild(objectiveText);
   wrapper.appendChild(objectiveSection);
   
@@ -88,7 +96,8 @@ export function createAboutMePanel(panelContainer) {
     { name: 'Web Development', description: 'Creating interactive and responsive websites using modern frameworks and technologies.' },
     { name: 'Mobile Development', description: 'Building mobile applications for iOS and Android platforms using native and cross-platform tools.' },
     { name: 'Game Development', description: 'Building engaging games and interactive experiences with game engines and web technologies.' },
-    { name: 'UI/UX Design', description: 'Designing intuitive user interfaces and seamless user experiences for web and mobile applications.' }
+    { name: 'UI/UX Design', description: 'Designing intuitive user interfaces and seamless user experiences for web and mobile applications.' },
+    { name: 'IT Support', description: 'Through my first internship, I gain hands on experience on a IT support environment, I was able to support agents and different employees with several technical issues.' }
   ];
   
   interests.forEach(interest => {
@@ -113,15 +122,15 @@ export function createAboutMePanel(panelContainer) {
   // Goals with descriptions
   const goals = [
     { 
-      text: 'Develop and learn new technical skills in real work environments',
+      text: ' Apply and strengthen my technical skills through real-world projects and professional experience',
       description: 'Seeking hands-on experience to apply classroom knowledge and learn industry best practices.'
     },
     { 
-      text: 'Grow my passion for game development and mobile development',
+      text: 'Build my career in software development, IT support, and the game industry while continuing to learn new technologies',
       description: 'Expand expertise in creating engaging games and mobile applications using cutting-edge technologies.'
     },
     { 
-      text: 'Gain different work experiences to make my resume and portfolio better',
+      text: ' Gain diverse industry experience and continuously improve my skills as a technology professional',
       description: 'Build a diverse portfolio showcasing various projects and experiences to advance my career.'
     }
   ];
@@ -359,13 +368,13 @@ function createEducationSlideshow() {
     {
       level: 'PHINMA-Saint Jude College Manila',
       program: 'Technical-Vocational-Livelihood Information and Communication Technology',
-      period: '2020 - 2022',
+      period: 'June 2020 - August 2022',
       images: []
     },
     {
       level: 'National University Manila',
       program: 'Bachelor of Science in Information Technology (Mobile and Web Applications)',
-      period: '2022 - Present',
+      period: 'August 2022 - September 2026',
       images: []
     }
   ];
@@ -378,12 +387,14 @@ function createEducationSlideshow() {
     ];
     educationData[1].images = [
       new URL('../assets/images/nugroup.jpg', import.meta.url).href,
-      new URL('../assets/images/nubuilding.PNG', import.meta.url).href
+      new URL('../assets/images/nubuilding.PNG', import.meta.url).href,
+      new URL('../assets/images/nugradgroup.jpg', import.meta.url).href
     ];
   } catch (e) {
     // Fallback paths
     educationData[0].images = ['/src/assets/images/sjgroup.jpg', '/src/assets/images/sjbuilding.PNG'];
-    educationData[1].images = ['/src/assets/images/nugroup.jpg', '/src/assets/images/nubuilding.PNG'];
+    educationData[1].images = ['/src/assets/images/nugroup.jpg', '/src/assets/images/nubuilding.PNG', '/src/assets/images/nugradgroup.jpg'];
+    
   }
   
   // Create slideshow for each education entry
@@ -463,6 +474,118 @@ function createEducationSlideshow() {
     gsap.to(eduItem, { opacity: 1, y: 0, duration: 0.6, delay: index * 0.2 });
     
     slideshowContainer.appendChild(eduItem);
+  });
+  
+  return slideshowContainer;
+}
+
+function createExperienceSlideshow() {
+  const slideshowContainer = document.createElement('div');
+  slideshowContainer.className = 'experience-slideshow-container';
+  
+  // Experience data - generate image URLs
+  const experienceData = [
+    {
+      company: 'Concentrix',
+      position: 'IT Support Intern',
+      period: 'November 2025 - January 2026',
+      images: [
+        new URL('../assets/images/concentrixbuilding.png', import.meta.url).href, 
+        new URL('../assets/images/concentrixgroup.jpg', import.meta.url).href, 
+        new URL('../assets/images/concentrixwork.jfif', import.meta.url).href
+      ]
+    }, 
+    {
+      company: 'Nexvision Innovations Inc.',
+      position: 'Full Stack Mobile and Web Developer Intern / Project Lead Intern',
+      period: 'January 2026 - May 2026',
+      images: [
+        new URL('../assets/images/nextitle.jfif', import.meta.url).href, 
+        new URL('../assets/images/nexgroup.jpg', import.meta.url).href, 
+        new URL('../assets/images/nexgroup2.jpg', import.meta.url).href
+      ]
+    }
+  ];
+  
+  // Create slideshow for each experience entry
+  experienceData.forEach((exp, index) => {
+    const expItem = document.createElement('div');
+    expItem.className = 'experience-item';
+    
+    // Image slideshow container
+    const slideshow = document.createElement('div');
+    slideshow.className = 'experience-slideshow';
+    
+    // Image container
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'experience-image-container slideshow-container';
+    
+    let currentImageIndex = 0;
+    const images = exp.images.map(imgPath => {
+      const img = document.createElement('img');
+      img.src = imgPath;
+      img.alt = `${exp.company} - ${exp.position}`;
+      img.className = 'experience-slideshow-image';
+      img.style.display = 'none';
+      img.onerror = function() {
+        this.style.display = 'none';
+      };
+      return img;
+    });
+    
+    if (images.length > 0) {
+      images[0].style.display = 'block';
+      images.forEach(img => imageContainer.appendChild(img));
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'image-placeholder';
+      placeholder.textContent = exp.company.charAt(0);
+      imageContainer.appendChild(placeholder);
+    }
+    
+    // Click to zoom handler
+    imageContainer.style.cursor = 'pointer';
+    imageContainer.addEventListener('click', () => {
+      if (images.length > 0) {
+        openImageZoom(images[currentImageIndex].src || images[currentImageIndex].getAttribute('src'));
+      }
+    });
+    
+    // Auto-rotate images every 3 seconds
+    if (images.length > 1) {
+      const interval = setInterval(() => {
+        images[currentImageIndex].style.display = 'none';
+        currentImageIndex = (currentImageIndex + 1) % images.length;
+        images[currentImageIndex].style.display = 'block';
+        
+        // Smooth fade transition
+        gsap.fromTo(images[currentImageIndex], 
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5 }
+        );
+      }, 3000);
+      slideshowIntervals.push(interval);
+    }
+    
+    slideshow.appendChild(imageContainer);
+    
+    // Content
+    const content = document.createElement('div');
+    content.className = 'experience-content';
+    content.innerHTML = `
+      <h2 class="experience-company">${exp.company}</h2>
+      <p class="experience-position">${exp.position}</p>
+      <span class="experience-period">${exp.period}</span>
+    `;
+    
+    expItem.appendChild(slideshow);
+    expItem.appendChild(content);
+    
+    // Animate on load
+    gsap.set(expItem, { opacity: 0, y: 20 });
+    gsap.to(expItem, { opacity: 1, y: 0, duration: 0.6, delay: index * 0.2 });
+    
+    slideshowContainer.appendChild(expItem);
   });
   
   return slideshowContainer;

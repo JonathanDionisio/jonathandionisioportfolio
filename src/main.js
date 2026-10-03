@@ -57,7 +57,7 @@ try {
 // Load person image texture URL
 let personTextureUrl;
 try {
-  personTextureUrl = new URL('./person.jpg', import.meta.url).href;
+  personTextureUrl = new URL('./person.jfif', import.meta.url).href;
 } catch (e) {
   personTextureUrl = '/src/person.jpg';
 }
